@@ -8,7 +8,7 @@ The current version features two characters dueling against each other. The amou
 
 The affairs take place in an alternative universe not much unlike the universes of Star Wars or Warhammer 40k. The weaponry has been inspired by weapons of our universe and the two universes just mentioned. Also, the characters possess inhumane capabilities that could be concidered 'magic' in our reality. Special care has been taken not to have too similar kind of weapons or other capabilities. The power of the weapons is such that the terrain tends to disappear quite quickly. To counter that, the characters have been equipped with the ability to spawn new terrain (either rock or flammable wood).<br />
 
-In addition to moving left and right and jumping, the characters have so called 'primary equipments' and 'secondary equipments'. The main difference is that the primary equipments use mana (which recharges all the time when the mana is below 100, even if the equipment isn't active) while the secondary equipments don't. There are currently 20 primary equipments and 6 secondary equipments (plus a few more when the player is controlling a vehicle).<br />
+In addition to moving left and right and jumping, the characters have so called 'primary equipments' and 'secondary equipments'. The main difference is that the primary equipments use mana (which recharges all the time when the mana is below 100, even if the equipment isn't active) while the secondary equipments don't. There are currently 20 primary equipments and 8 secondary equipments (plus a few more when the player is controlling a vehicle).<br />
 
 ### Credits
 <ul>
