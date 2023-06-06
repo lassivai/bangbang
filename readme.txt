@@ -1,16 +1,16 @@
 ---- Keyboard/mouse shortcuts (until a proper GUI will be made) ----
 
-Escape			    Closes the application
-F2			        Toggles player 1 human/AI controlled
-F3			        Toggles player 2 human/AI controlled
-F4			        Spawns a walker (for debugging)
-F5			        Spawns a robot (for debugging)
-F6, F7, F12		    Prints to console debugging information you don't need
-G			        Toggles debugging rendering of pixels
-N			        Toggles sound effects on/off
+Escape			Closes the application
+F2			Toggles player 1 human/AI controlled
+F3			Toggles player 2 human/AI controlled
+F4			Spawns a walker (for debugging)
+F5			Spawns a robot (for debugging)
+F6, F7, F12		Prints to console debugging information you don't need
+G			Toggles debugging rendering of pixels
+N			Toggles sound effects on/off
 R, T, Y, U, I, O	Changes terrain brush type (experiment if you want to, for debugging)
 1, 2, 3, 4, 5, 6, 7	Changes terrain brush size (for debugging)
-Mouse drag		    Paints terrain (for debugging)
+Mouse drag		Paints terrain (for debugging)
 
 
 ---- CHARACTERS ----
