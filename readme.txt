@@ -179,7 +179,6 @@ Applies a force away from the character using this item. Doesn't work against li
 
 #### Laser Sight ####
 Best used with weapons with straight trajectories (blaster, missile launcher and especially rifle)
-<<<<<<< HEAD
 
 
 
