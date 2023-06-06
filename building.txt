@@ -1,0 +1,40 @@
+To build Bang Bang from source code either on Windows or Linux machine, install the dependencies, enter the main folder and enter a command below.
+
+---- Dependencies on Windows ----
+Bang Bang has only one dependency: SFML multimedia library, available from
+https://www.sfml-dev.org/files/SFML-2.5.1-windows-gcc-7.3.0-mingw-64-bit.zip
+or
+https://www.sfml-dev.org/download.php
+
+Additionally you'll need MinGW compiler. Version 8 has been tested. Versions above may not work.
+
+---- Build commands on Windows ----
+
+g++ src/bangbang.cpp -I[drive]:\[folders-to]\SFML-2.5.1[or other version]\include -L[drive]:\[folders-to]\SFML-2.5.1[or other version]\lib -lsfml-graphics -lsfml-window -lsfml-system -std=c++11 --static -static-libgcc -static-libstdc++ -o bangbang.exe
+
+example:
+
+g++ src/bangbang.cpp -IG:\programming\c++\libs\SFML-2.5.1\include -LG:\programming\c++\libs\SFML-2.5.1\lib -lsfml-graphics -lsfml-window -lsfml-system -std=c++11 --static -static-libgcc -static-libstdc++ -o bangbang.exe
+
+Or if there are problems with the above you can try the following...
+
+g++ src/bangbang.cpp -I[drive]:\[folders-to]\SFML-2.5.1[or other version]\include -L[drive]:\[folders-to]\SFML-2.5.1[or other version]\lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -std=c++11 -o bangbang.exe
+
+example:
+
+g++ src/bangbang.cpp -IG:\programming\c++\libs\SFML-2.5.1\include -LG:\programming\c++\libs\SFML-2.5.1\lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -std=c++11 -o bangbang.exe
+
+
+---- Dependencies on Linux ----
+
+SFML multimedia library is needed, also the dev packages. For example in Ubuntu, Synaptic package manager may be used to locate and install the various SFML component libraries.
+
+Additionally, the g++ compiler is needed.
+
+---- Build command on Linux, debug (slower) ----
+
+g++ src/bangbang.cpp -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -std=c++11 -g -O0 -o bangbang
+
+---- Build command on Linux, release (faster) ----
+
+g++ src/bangbang.cpp -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -std=c++11 -O3 -o bangbang
