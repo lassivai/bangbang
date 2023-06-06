@@ -20628,7 +20628,11 @@ int main() {
     std::vector<std::vector<double>> avgTimes;
     avgTimes.resize(16);
     for(int i=0; i<16; i++) {
+<<<<<<< HEAD
         avgTimes[i].resize(60 * 60 * 60 * 60 * 2);
+=======
+        avgTimes[i].resize(60 * 60 * 60 * 60);
+>>>>>>> 57a55c4d1086ee0e98e61276b326aacff0d6eb83
     }
     long frameCounter = 0;
     double previousUpdateTime = 0;
@@ -20961,6 +20965,7 @@ int main() {
             /*if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
                 map.restart();
             }*/
+<<<<<<< HEAD
             /*if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::G) {
                 map.debugTileRenderMode = (map.debugTileRenderMode+1) % 3;
             }*/
@@ -20980,6 +20985,27 @@ int main() {
                 map.asdCounter++;
                 if(map.asdCounter > 255) map.asdCounter = 0;
             }*/
+=======
+            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::G) {
+                map.debugTileRenderMode = (map.debugTileRenderMode+1) % 3;
+            }
+            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F) {
+                map.useDebugColors = !map.useDebugColors;
+            }
+            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::V) {
+                debugRenderProjectiles = !debugRenderProjectiles;
+            }
+            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::B) {
+                areProjectilesPixelated = !areProjectilesPixelated;
+                if(areProjectilesPixelated) printf("Projectiles pixelated!\n");
+                if(!areProjectilesPixelated) printf("Projectiles as rectangles!\n");
+            }
+            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Z) {
+                map.asd(map.tilePainter, map.asdCounter);
+                map.asdCounter++;
+                if(map.asdCounter > 255) map.asdCounter = 0;
+            }
+>>>>>>> 57a55c4d1086ee0e98e61276b326aacff0d6eb83
 
             if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::N) {
                 float v = 1.0 - masterVolume;

@@ -179,6 +179,7 @@ Applies a force away from the character using this item. Doesn't work against li
 
 #### Laser Sight ####
 Best used with weapons with straight trajectories (blaster, missile launcher and especially rifle)
+<<<<<<< HEAD
 
 
 
@@ -253,3 +254,5 @@ Robot moving velocity is 2/3 when using this equipment. Otherwise similar to the
 #### Jet Pack ####
 Applies a force of 1.25*gravity to up direction. Similar to the version used by the characters.
 
+=======
+>>>>>>> 57a55c4d1086ee0e98e61276b326aacff0d6eb83
