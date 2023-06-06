@@ -21,7 +21,7 @@ In addition to moving left and right and jumping, the characters have so called 
   
 ### Known bugs and other issues
 <ul>
-<li>The coding style and quality is perhaps quite 'old school' too, concidering that almost all of the code base is packed in to a one source file. The main design decision has been: Easy to code for me (I mostly remember the names of the classes and can navigate with a search tool). If the project grows or attracts other kind of attention, the code base will be perhaps divided in to one header file and one source file per class basis.</li>
+<li>The coding style and quality is perhaps quite 'old school' too, concidering that almost all of the code base is packed in to a one source file. The main design decision has been: Easy to code for me (I mostly remember the names of the classes and can navigate around with the search tool). If the project grows or attracts other kind of attention, the code base will be perhaps divided in to one header file and one source file per class basis.</li>
 <li>Textures and other graphics should be concidered 'initial'.</li>
 <li>Loud sound and music might break the audio if played simultaneously. Will be fixed as soon as possible. Keeping your audio volume on a moderate level in software side might help.</li>
 <li>Robots should not hit the player belonging to the same team. Your option currently is to avoid being in front of robots of either side.</li>
