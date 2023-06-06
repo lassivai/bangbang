@@ -30,4 +30,5 @@ In addition to moving left and right and jumping, the characters have so called 
 <li>AI characters and vehicles should attack the nearest character/vehicle (not the first on the list!).</li>
 <li>The game will feature a proper start menu, options menu and other graphical user inteface elements in the future.</li>
 <li>Napalm flames not burning on the bottom of the screen when there is a thin layer of blood.</li>
+<li>Walker collision detection could be improved (currently falls down 45 degree slopes and vibrates randomly on uneven terrain).</li>
 </ul>
