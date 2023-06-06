@@ -179,3 +179,77 @@ Applies a force away from the character using this item. Doesn't work against li
 
 #### Laser Sight ####
 Best used with weapons with straight trajectories (blaster, missile launcher and especially rifle)
+
+
+
+---- WALKERS ----
+Full HP: 1000
+Full mana: 100
+These vehicles are controlled by the players. A character needs to enter this othwise inactive vehicle. A human-controlled character can enter the walker from nearby by double-clicking the equipment change key.
+
+---- PRIMARY EQUIPMENTS OF WALKERS ----
+
+#### Heavy Flamer ####
+A more powerful version of the common flame thrower.
+Mana cost: 25 / second
+Loading time to full: 10 s
+
+#### Laser Cannon ####
+A more powerful version of the common blaster.
+Damage: 33.33 HP
+Explosion radius: 100
+Mana cost: 5
+Loading time to full: 10 s
+Firing rate: 5 shots/second
+
+#### Cluster Mortar ####
+Launches 10 clusters affected by gravity in to medium distance.
+Damage: 20 HP
+Explosion radius: 75
+Mana cost: 16.666
+Loading time to full: 10 s
+
+#### Multi Bolter ####
+Similar to the common bolter except fires 5 bolts simultaneously in a little bit slower rate.
+Damage: 14.3 HP
+Mana cost: 6.25
+Loading time to full: 10 s
+Firing rate: 4 shots/second
+
+##### Heavy Melter Cannon ####
+Similar to the common melter cannon except with a bigger melting range.
+Melting range: 500
+Mana cost: 100
+Loading time to full: 5 s
+
+
+---- SECONDARY EQUIPMENTS OF WALKERS ----
+
+#### Digger ####
+Walker moving velocity is 2/3 when using this equipment. Otherwise similar to the version equipped by the characters.
+
+#### Laser Sight ####
+Similar to the laser sight that is equipped by the characters.
+
+
+---- ROBOTS ----
+Full HP: 50
+Full mana: 100
+These vehicles are autonomous and are not controlled by the players.
+
+---- PRIMARY EQUIPMENTS OF ROBOTS ----
+
+##### Blaster ####
+Damage: 10 HP
+Mana cost: 5
+Loading time to full: 10 s
+Firing rate: 5 shots/second
+
+---- SECONDARY EQUIPMENTS OF ROBOTS ----
+
+#### Digger ####
+Robot moving velocity is 2/3 when using this equipment. Otherwise similar to the version equipped by the characters.
+
+#### Jet Pack ####
+Applies a force of 1.25*gravity to up direction. Similar to the version used by the characters.
+
