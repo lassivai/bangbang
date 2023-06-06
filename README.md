@@ -27,6 +27,7 @@ In addition to moving left and right and jumping, the characters have so called 
 <li>Robots should not hit the player belonging to the same team. Your option currently is to avoid being in front of robots of either side.</li>
 <li>Graphics processing unit could be used to speed things up (and have even bigger effects).</li>
 <li>The difficulty level of AI can't yet be adjusted.</li>
+<li>AI characters and vehicles should attack the nearest character/vehicle (not the first on the list!).</li>
 <li>The game will feature a proper start menu, options menu and other graphical user inteface elements in the future.</li>
 <li>Napalm flames not burning on the bottom of the screen when there is a thin layer of blood.</li>
 </ul>
