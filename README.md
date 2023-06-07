@@ -5,7 +5,7 @@ You can download Windows binaries of Bang Bang from
 
 <b>Disclaimer:</b> The software is being developed with Ubuntu Linux. Windows version crashed as soon as I tested it (7.6.2023). :( There has been no crashes on Ubuntu for several dozens of hours of testing. I have recently added new features, which might be the culprit of the Windows crash. I will continue testing and debugging.<br />
 
-Also, the game runs fluently at 60 FPS on my 8th gen i5-8400 (6 core) machine, whatever is happening in the game. I just (7.6.2023) tested the game with my few years old laptop and the framerate was 30-50 FPS depending on what was happening in the game. :( I might tailor settings in the future to enable fluent framerate on older/weaker machines.<br />
+Also, the game runs fluently at 60 FPS on my 8th gen i5-8400 (6 core) machine (with display resolution 2560x1440), whatever is happening in the game. I just (7.6.2023) tested the game with my few years old laptop and the framerate was 30-50 FPS depending on what was happening in the game. :( I might tailor settings in the future to enable fluent framerate on older/weaker machines.<br />
 
 # 
 
