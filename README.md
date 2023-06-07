@@ -1,5 +1,14 @@
 # Bang Bang
 
+You can download Windows binaries of Bang Bang from 
+<a href="https://drive.google.com/file/d/1PEI40VvwpzArWicYlg79Y-NY2UaTnc_8/view?usp=sharing">here</a>.<br />
+
+<b>Disclaimer:</b> The software is being developed with Ubuntu Linux. Windows version crashed as soon as I tested it (7.6.2023). :( There has been no crashes on Ubuntu for several dozens of hours of testing. I have recently added new features, which might be the culprit of the Windows crash. I will continue testing and debugging.<br />
+
+Also, the game runs fluently at 60 FPS on my 8th gen i5-8400 (6 core) machine (with display resolution 2560x1440), whatever is happening in the game. I just (7.6.2023) tested the game with my few years old laptop and the framerate was 30-50 FPS depending on what was happening in the game. :( I might tailor settings in the future to enable fluent framerate on older/weaker machines.<br />
+
+# 
+
 Version 0.??? <br />
 
 A 2D action game inspired by 90s Finnish indie games such as Liero, Molez and Wings. The target has been old school style pixel based graphics and physics, with effects empowered by 20+ years progress in computer performance.<br />
