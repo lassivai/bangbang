@@ -1,7 +1,7 @@
 # Bang Bang
 
 You can download Windows binaries of Bang Bang from 
-<a href="https://drive.google.com/file/d/11hiiwpJvMFsmDKG3IKkVo7OBYCkgLL33/view?usp=sharing">here</a>.<br />
+<a href="https://drive.google.com/file/d/1PEI40VvwpzArWicYlg79Y-NY2UaTnc_8/view?usp=sharing">here</a>.<br />
 
 <b>Disclaimer:</b> The software is being developed with Ubuntu Linux. Windows version crashed as soon as I tested it (7.6.2023). :( There has been no crashes on Ubuntu for several dozens of hours of testing. I have recently added new features, which might be the culprit of the Windows crash. I will continue testing and debugging.<br />
 
