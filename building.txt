@@ -18,11 +18,11 @@ g++ src/bangbang.cpp -IG:\programming\c++\libs\SFML-2.5.1\include -LG:\programmi
 
 Or if there are problems with the above you can try the following...
 
-g++ src/bangbang.cpp -I[drive]:\[folders-to]\SFML-2.5.1[or other version]\include -L[drive]:\[folders-to]\SFML-2.5.1[or other version]\lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -std=c++11 -o bangbang.exe
+g++ src/bangbang.cpp -I[drive]:\[folders-to]\SFML-2.5.1[or other version]\include -L[drive]:\[folders-to]\SFML-2.5.1[or other version]\lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -std=c++11 -O3 -o bangbang.exe
 
 example:
 
-g++ src/bangbang.cpp -IG:\programming\c++\libs\SFML-2.5.1\include -LG:\programming\c++\libs\SFML-2.5.1\lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -std=c++11 -o bangbang.exe
+g++ src/bangbang.cpp -IG:\programming\c++\libs\SFML-2.5.1\include -LG:\programming\c++\libs\SFML-2.5.1\lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -std=c++11 -O3 -o bangbang.exe
 
 
 ---- Dependencies on Linux ----
