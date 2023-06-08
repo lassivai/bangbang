@@ -388,8 +388,8 @@ struct MusicAlbum {
                     filename += "0";
                 }
                 filename += std::to_string(index);
-                filename += "." + fileExtension;
                 std::string name = filename;
+                filename += "." + fileExtension;
                 filename = path + filename;
 
                 PieceOfMusic *p = new PieceOfMusic();
@@ -436,6 +436,10 @@ struct MusicAlbum {
                 if(playListIndex >= musicPieces.size()) {
                     playListIndex = 0;
                 }
+                /*if(playListIndex >= musicPieces.size()) {
+                    isPlaying = false;
+                    return;
+                }*/
                 activePieceOfMusic = musicPieces[playListIndex];
                 activePieceOfMusic->play();
             }
@@ -457,6 +461,14 @@ struct MusicAlbum {
         float ret = 0;
         if(activePieceOfMusic != nullptr) {
             ret = activePieceOfMusic->getPlayingOffsetSeconds();
+        }
+        return ret;
+    }
+
+    float getCurrentlyPlayingPieceDurationSeconds() {
+        float ret = 0;
+        if(activePieceOfMusic != nullptr) {
+            ret = activePieceOfMusic->durationSeconds;
         }
         return ret;
     }
@@ -14428,7 +14440,10 @@ void LandGrower::asdLandGrowerTiles(Map &map, int threshold) {
 
                     for(int i=0; i<32; i++) {
                         for(int j=0; j<32; j++) {
-
+                            
+                            if(tx + i >= map.w || ty+j >= map.h){                                
+                                continue;
+                            }
                             if(rock) {
                                 map.paintTilesNoMappingLargeTiles(map.largeTileSet01, largeTileIndex, false, tx+i, ty+j, i, j);
                             }
@@ -20558,11 +20573,22 @@ int main() {
     fpsTextRect.setOutlineColor(sf::Color(0, 0, 0, 100));
     fpsTextRect.setOutlineThickness(-1.0);
 
-    sf::Text gameStatusText;
+    sf::Text trackDetailsText;
+    trackDetailsText.setFont(font);
+    trackDetailsText.setString("Music starting soon...");
+    trackDetailsText.setCharacterSize(64);
+    trackDetailsText.setFillColor(sf::Color::White);
+
+    sf::RectangleShape trackDetailsRect;
+    trackDetailsRect.setFillColor(sf::Color(0, 0, 0, 100));
+    trackDetailsRect.setOutlineColor(sf::Color(255, 255, 255, 100));
+    trackDetailsRect.setOutlineThickness(3.0);
+
+    /*sf::Text gameStatusText;
     gameStatusText.setFont(font);
     gameStatusText.setString("123");
     gameStatusText.setCharacterSize(30);
-    gameStatusText.setFillColor(sf::Color::Red);
+    gameStatusText.setFillColor(sf::Color::Red);*/
 
     sf::Text characterStatusText;
     characterStatusText.setFont(font);
@@ -20622,13 +20648,13 @@ int main() {
     //VALGRIND_ENABLE_ERROR_REPORTING;
     //CALLGRIND_START_INSTRUMENTATION;
 
-    std::vector<float> tickTock;
+    /*std::vector<float> tickTock;
     tickTock.resize(16);
     
     std::vector<std::vector<double>> avgTimes;
     avgTimes.resize(16);
     for(int i=0; i<16; i++) {
-        avgTimes[i].resize(60 * 60 * 60 * 60 * 2);
+        avgTimes[i].resize(60 * 60 * 60 * 60);
     }
     long frameCounter = 0;
     double previousUpdateTime = 0;
@@ -20649,7 +20675,7 @@ int main() {
         "",
         "",
         "",
-        "window.display()"};
+        "window.display()"};*/
         
                                                        
 
@@ -20657,7 +20683,7 @@ int main() {
     while(window.isOpen()) {
         timer.update();
 
-        timer.tick();
+        //timer.tick();
 
         sf::Event event;
         while(window.pollEvent(event)) {
@@ -20674,6 +20700,10 @@ int main() {
                 screenW = event.size.width;
                 screenH = event.size.height;
             }
+            /*if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F10) {
+                organWorks.play();
+            }*/
+
 
             /*if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Num1) {
                 map.updateFrequencySeconds = 1.0/3.0;
@@ -20685,7 +20715,7 @@ int main() {
                 printf("Key: %d\n", event.key.code);
             }*/
 
-            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F12) {
+            /*if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F12) {
                 float totalTime = 0;
                 for(int i=0; i<tickTock.size(); i++) {
                     totalTime += tickTock[i];
@@ -20726,7 +20756,7 @@ int main() {
 
                 frameCounter = 0;
                 previousUpdateTime = timer.totalTime;
-            }
+            }*/
 
             if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F4) {
                 Walker *walkerTest = new Walker();
@@ -20996,40 +21026,40 @@ int main() {
 
         }
 
-        float t0 = timer.tock();
-        tickTock[0] = max(t0, tickTock[0]);
-        avgTimes[0][frameCounter] = t0;
+        //float t0 = timer.tock();
+        //tickTock[0] = max(t0, tickTock[0]);
+        //avgTimes[0][frameCounter] = t0;
 
-        timer.tick();
+        //timer.tick();
         soundWrapper.update(timer.frameTime);
         organWorks.update();
-        float t1 = timer.tock();
-        tickTock[1] = max(t1, tickTock[1]);
-        avgTimes[1][frameCounter] = t1;
+        //float t1 = timer.tock();
+        //tickTock[1] = max(t1, tickTock[1]);
+        //avgTimes[1][frameCounter] = t1;
 
-        timer.tick();
+        //timer.tick();
         character.update(timer.frameTime, screenW, screenH, map);
         character2.update(timer.frameTime, screenW, screenH, map);
-        float t2 = timer.tock();
-        tickTock[2] = max(t2, tickTock[2]);
-        avgTimes[2][frameCounter] = t2;
+        //float t2 = timer.tock();
+        //tickTock[2] = max(t2, tickTock[2]);
+        //avgTimes[2][frameCounter] = t2;
 
 
-        timer.tick();
+        //timer.tick();
         updateVehicles(timer.frameTime, screenW, screenH, map);
 
         for(int i=0; i<vehicles.size(); i++) {
             vehicles[i]->enterThisVehicle(characters);
         }
-        float t3 = timer.tock();
-        tickTock[3] = max(t3, tickTock[3]);
-        avgTimes[3][frameCounter] = t3;
+        //float t3 = timer.tock();
+        //tickTock[3] = max(t3, tickTock[3]);
+        //avgTimes[3][frameCounter] = t3;
 
-        timer.tick();
+        //timer.tick();
         updateProjectiles(map, timer.frameTime);
-        float t4 = timer.tock();
-        tickTock[4] = max(t4, tickTock[4]);
-        avgTimes[4][frameCounter] = t4;
+        //float t4 = timer.tock();
+        //tickTock[4] = max(t4, tickTock[4]);
+        //avgTimes[4][frameCounter] = t4;
 
 
         window.clear();
@@ -21038,66 +21068,66 @@ int main() {
             map.drag(mouse.leftPressed, mouse.x, mouse.y, screenW, screenH);
         }
 
-        timer.tick();
+        //timer.tick();
         //if(timer.totalTime > 1) {
             map.update(timer.frameTime);
 //        }
-        float t5 = timer.tock();
-        tickTock[5] = max(t5, tickTock[5]);
-        avgTimes[5][frameCounter] = t5;
+        //float t5 = timer.tock();
+        //tickTock[5] = max(t5, tickTock[5]);
+        //avgTimes[5][frameCounter] = t5;
 
         //map.renderBg(screenW, screenH, window);
-        timer.tick();
+        //timer.tick();
         map.render(screenW, screenH, window);
-        float t6 = timer.tock();
-        tickTock[6] = max(t6, tickTock[6]);
-        avgTimes[6][frameCounter] = t6;
+        //float t6 = timer.tock();
+        //tickTock[6] = max(t6, tickTock[6]);
+        //avgTimes[6][frameCounter] = t6;
 
         //duration = timer.tock();
         //printf("map.render() duration %f ms, %f \%\n", duration * 1000, duration / timer.frameTime * 100);
 
-        timer.tick();
+        //timer.tick();
         map.renderPixelProjectiles(screenW, screenH);
-        float t7 = timer.tock();
-        tickTock[7] = max(t7, tickTock[7]);
-        avgTimes[7][frameCounter] = t7;
+        //float t7 = timer.tock();
+        //tickTock[7] = max(t7, tickTock[7]);
+        //avgTimes[7][frameCounter] = t7;
 
-        timer.tick();
+        //timer.tick();
         map.renderFinal(screenW, screenH, window);
-        float t8 = timer.tock();
-        tickTock[8] = max(t8, tickTock[8]);
-        avgTimes[8][frameCounter] = t8;
+        //float t8 = timer.tock();
+        //tickTock[8] = max(t8, tickTock[8]);
+        //avgTimes[8][frameCounter] = t8;
 
 
-        timer.tick();
+        //timer.tick();
         renderVehicles(window);
-        float t9 = timer.tock();
-        tickTock[9] = max(t9, tickTock[9]);
-        avgTimes[9][frameCounter] = t9;
+        //float t9 = timer.tock();
+        //tickTock[9] = max(t9, tickTock[9]);
+        //avgTimes[9][frameCounter] = t9;
 
-        timer.tick();
+        //timer.tick();
         character.render(window);
         character2.render(window);
-        float t10 = timer.tock();
-        tickTock[10] = max(t10, tickTock[10]);
-        avgTimes[10][frameCounter] = t10;
+        //float t10 = timer.tock();
+        //tickTock[10] = max(t10, tickTock[10]);
+        //avgTimes[10][frameCounter] = t10;
 
-        timer.tick();
+        //timer.tick();
         renderProjectiles(window, map.scaleX, map.scaleY);
-        float t11 = timer.tock();
-        tickTock[11] = max(t11, tickTock[11]);
-        avgTimes[11][frameCounter] = t11;
+        //float t11 = timer.tock();
+        //tickTock[11] = max(t11, tickTock[11]);
+        //avgTimes[11][frameCounter] = t11;
 
-        timer.tick();
+        //timer.tick();
         character.renderCrosshair(window);
         character2.renderCrosshair(window);
-        float t12 = timer.tock();
-        tickTock[12] = max(t12, tickTock[12]);
-        avgTimes[12][frameCounter] = t12;
+        //float t12 = timer.tock();
+        //tickTock[12] = max(t12, tickTock[12]);
+        //avgTimes[12][frameCounter] = t12;
 
 
 
-        timer.tick();
+//        timer.tick();
         float barWidth = 80;
         float barHeight = 8;
 
@@ -21187,15 +21217,16 @@ int main() {
             borderRect.setSize(sf::Vector2f(barWidth, barHeight));
             window.draw(borderRect);
         }
-        float t13 = timer.tock();
-        tickTock[13] = max(t13, tickTock[13]);
-        avgTimes[13][frameCounter] = t13;
+        //float t13 = timer.tock();
+        //tickTock[13] = max(t13, tickTock[13]);
+        //avgTimes[13][frameCounter] = t13;
 
 
         //character.collisionHandler.renderCollisionPoints(window, character);
         
-        timer.tick();
+        //timer.tick();
 
+        
         float angle = character.aimAngle;
         if(character.inThisVehicle) {
             angle = character.inThisVehicle->aimAngle;
@@ -21233,7 +21264,7 @@ int main() {
         fpsText.setString("music: " + nowPlaying + "\n" +
                           //" - " + to_string(musicOffset) + " s" + "\n" +
                           "time " + to_string(timer.totalTime) + "\n" +
-                          /*"dt " + to_string(timer.frameTime) + "\n" +*/
+                          //"dt " + to_string(timer.frameTime) + "\n" +
                           "fps " + to_string(timer.fps)+ "\n" +
                           "num projectiles "+to_string(projectiles.size())+ "\n" +
                           "num sounds "+to_string(soundWrapper.soundVector.size()) +
@@ -21247,10 +21278,48 @@ int main() {
 
         window.draw(fpsText);
 
+        /*std::string nowPlaying = organWorks.getCurrentlyPlayingPieceName();
+        int trackOffset = organWorks.getCurrentlyPlayingPieceOffsetSeconds();
+        int trackDuration = organWorks.getCurrentlyPlayingPieceDurationSeconds();
+
+        std::string trackText = "Music starting soon...";
+
+        if(nowPlaying.size() > 0) {
+            trackText = nowPlaying;
+            int minutesOffset = trackOffset / 60;
+            int secondsOffset = trackOffset - minutesOffset * 60;    
+            std::string offset = "0" + std::to_string(minutesOffset) + ":";
+            if(secondsOffset < 10) {
+                offset += "0";
+            }
+            offset += std::to_string(secondsOffset);
+
+            int minutesDuration = trackDuration / 60;
+            int secondsDuration = trackDuration - minutesDuration * 60;
+            std::string duration = "0" + std::to_string(minutesDuration) + ":";
+            if(secondsDuration < 10) {
+                duration += "0";
+            }
+            duration += std::to_string(secondsDuration);
+
+            trackText += "\n" + offset + " / " + duration;
+        }
+        if(!organWorks.isPlaying && organWorks.playListIndex > 0) {
+            trackText = "Thanks for\nlistening!";
+        }
+
+        trackDetailsText.setString(trackText);
+        trackDetailsText.setPosition( screenW/2 - 300, screenH/2-100);
+
+        trackDetailsRect.setPosition(screenW/2 - 350, screenH/2 - 150);
+        trackDetailsRect.setSize(sf::Vector2f(700, 300));
+        window.draw(trackDetailsRect);
+
+        window.draw(trackDetailsText);*/
         
-        float t14 = timer.tock();
-        tickTock[14] = max(t14, tickTock[14]);
-        avgTimes[14][frameCounter] = t14;
+        //float t14 = timer.tock();
+        //tickTock[14] = max(t14, tickTock[14]);
+        //avgTimes[14][frameCounter] = t14;
 
         /*sf::CircleShape cs;
 
@@ -21278,13 +21347,13 @@ int main() {
         cs.setPosition(screenW*0.5, screenH);
         window.draw(cs);*/
 
-        timer.tick();
+        //timer.tick();
         window.display();
-        float t15 = timer.tock();
-        tickTock[15] = max(t15, tickTock[15]);
-        avgTimes[15][frameCounter] = t15;
+        //float t15 = timer.tock();
+        //tickTock[15] = max(t15, tickTock[15]);
+        //avgTimes[15][frameCounter] = t15;
 
-        frameCounter++;
+        //frameCounter++;
     }
 
     soundWrapper.finish();
