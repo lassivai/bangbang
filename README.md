@@ -3,7 +3,7 @@
 You can download Windows binaries of Bang Bang from 
 <a href="https://drive.google.com/file/d/1Ps2T27JUc8s_at3MrlU7Eg0GnVLIzRHn/view?usp=sharing">here</a>.<br />
 
-The soundtrack of the game can be listened <a href="https://www.youtube.com/watch?v=855o5PHB9P0"> here</a>.<br />
+The soundtrack of the game can be listened in <a href="https://www.youtube.com/watch?v=855o5PHB9P0">YouTube</a> or <a href="https://soundcloud.com/lassi-palmujoki/sets/bang-bang-original-soundtrack">SoundCloud</a>.<br />
 
 <b>Disclaimer:</b> The software is being developed with Ubuntu Linux. Windows version crashed as soon as I tested it (7.6.2023). :( There has been no crashes on Ubuntu for several dozens of hours of testing. I have recently added new features, which might be the culprit of the Windows crash. I will continue testing and debugging.<br />
 
