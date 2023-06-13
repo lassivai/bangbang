@@ -8,7 +8,7 @@ F5			Spawns a robot (for debugging)
 F6, F7, F12		Prints to console debugging information you don't need
 G			Toggles debugging rendering of pixels
 N			Toggles sound effects on/off
-b           Toggles music playing/paused
+B			Toggles music playing/paused
 R, T, Y, U, I, O	Changes terrain brush type (experiment if you want to, for debugging)
 1, 2, 3, 4, 5, 6, 7	Changes terrain brush size (for debugging)
 Mouse drag		Paints terrain (for debugging)
