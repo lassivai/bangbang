@@ -11,12 +11,15 @@ N			Toggles sound effects on/off
 R, T, Y, U, I, O	Changes terrain brush type (experiment if you want to, for debugging)
 1, 2, 3, 4, 5, 6, 7	Changes terrain brush size (for debugging)
 Mouse drag		Paints terrain (for debugging)
+<<<<<<< HEAD
 
 
 ---- Command line arguments ----
 
 The following command sets a different display mode than the default (number = 0). You'll see available display modes when checking the console that has run the program. (If you haven't actually run the program from command line, the console must be checked during the time the program is on. Alt+Tab etc.)
 -display_mode [number]
+=======
+>>>>>>> 369206096ebcdac5a56e140b05eac6b89e41e2c5
 
 
 ---- CHARACTERS ----
