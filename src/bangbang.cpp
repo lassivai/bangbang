@@ -69,6 +69,9 @@ DEBUG
 #include <cstdio>
 #include <cstdlib>
 #include <ctgmath>
+#include <ctime>
+#include <cstring>
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -76,12 +79,13 @@ DEBUG
 #include <chrono>
 #include <random>
 #include <algorithm>
-#include <ctime>
 #include <thread>
 #include <mutex>
+
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/System/Vector2.hpp>
+
 #include "noise.h"
 
 //#include <valgrind/callgrind.h>
@@ -146,6 +150,16 @@ template<class K, class L> double max(K a, L b) {
     return a > b ? a : b;
 }
 
+template<class K> K clamp(K x, K min, K max) {
+    if(x < min) {
+        return min;
+    }
+    if(x > max) {
+        return max;
+    }
+    return x;
+}
+
 inline bool isWithinRect(float px, float py, float ax, float ay, float bx, float by) {
     return px >= ax && px <= bx && py >= ay && py <= by;
 }
@@ -188,6 +202,69 @@ struct Mouse {
     int x, y;
     bool leftPressed = false, middlePressed = false, rightPressed = false;
 };
+
+
+
+struct PixelImage {
+    int w = 0, h = 0;
+    sf::Image image;
+    sf::Texture texture;
+    sf::Sprite sprite;
+    const sf::Uint8* constPixels = nullptr;
+    sf::Uint8* pixels = nullptr;
+
+    float scaleX = 1, scaleY = 1;
+
+    ~PixelImage() {
+        delete [] pixels;
+    }
+
+    bool loadFromFile(const std::string &filename) {
+        std::string path = "data/textures/"+filename;
+        if(!image.loadFromFile(path)) {
+            printf("Couldn't open file '%s'!\n", path.c_str());
+            return false;
+        }
+        texture.loadFromImage(image);
+        sprite.setTexture(texture, true);
+        sf::Vector2u size = image.getSize();
+        w = size.x;
+        h = size.y;
+
+        constPixels = image.getPixelsPtr();
+
+        pixels = new sf::Uint8[w * h * 4];
+        for(int i=0; i<w*h*4; i++) {
+            pixels[i] = constPixels[i];
+        }
+
+        return true;
+    }
+
+    void initPixels(int w, int h) {
+        if(pixels) {
+            delete [] pixels;
+        }
+        this->w = w;
+        this->h = h;
+        pixels = new sf::Uint8 [w*h*4];
+    }
+
+    void updatePixels() {
+        image.create(w, h, pixels);
+        texture.loadFromImage(image);
+        sprite.setTexture(texture, true);
+    }
+
+    void render(sf::RenderWindow &window, int x = 0, int y = 0) {
+        sprite.setPosition(x, y);
+        sprite.setScale(scaleX, scaleY);
+        window.draw(sprite);
+    }
+};
+
+
+
 
 struct Timer {
     double frameTime, fps, totalTime;
@@ -368,6 +445,8 @@ struct MusicAlbum {
 
     int playListIndex = 0;
 
+    bool repeatPlayList = true;
+
     ~MusicAlbum() {
         for(int i=0; i<musicPieces.size(); i++) {
             delete musicPieces[i];
@@ -433,13 +512,16 @@ struct MusicAlbum {
             if(activePieceOfMusic->isPlaybackFinished()) {
                 activePieceOfMusic->stop();
                 playListIndex++;
+
                 if(playListIndex >= musicPieces.size()) {
-                    playListIndex = 0;
+                    if(repeatPlayList) {
+                        playListIndex = 0;
+                    }
+                    else {
+                        isPlaying = false;
+                        return;
+                    }
                 }
-                /*if(playListIndex >= musicPieces.size()) {
-                    isPlaying = false;
-                    return;
-                }*/
                 activePieceOfMusic = musicPieces[playListIndex];
                 activePieceOfMusic->play();
             }
@@ -566,7 +648,7 @@ struct Map {
 
 
     struct Tile {
-        enum Type { None, Ground, Dirt, Water, Oil };
+        enum Type { None, Ground, Dirt, Water, Oil, GroundTmp, DirtTmp };
 
         Type type = None;
         bool firmlyGrounded = false;
@@ -1197,6 +1279,9 @@ struct Map {
                     if(map.tiles[i].type == Map::Tile::Type::Ground) {
                         map.tiles[i].type = Map::Tile::Type::Dirt;
                     }
+                    if(map.tiles[i].type == Map::Tile::Type::GroundTmp) {
+                        map.tiles[i].type = Map::Tile::Type::DirtTmp;
+                    }
                 }
             }
         }
@@ -1485,24 +1570,31 @@ struct Map {
                     }
                 }
 
-                /*if(map->tiles[i].type == Map::Tile::Dirt) {
-                    if(y < map->h-1 && (map->tiles[i+map->w].type == Map::Tile::None || map->tiles[i+map->w].type == Map::Tile::Water || map->tiles[i+map->w].type == Map::Tile::Oil)) {
+                
+
+
+
+
+
+
+                if(map->tiles[i].type == Map::Tile::DirtTmp) {
+                    if(y < map->h-1) {
                         Tile tmp = map->tiles[i+map->w];
                         map->tiles[i+map->w] = map->tiles[i];
                         map->tiles[i] = tmp;
                     }
-                    else if(y < map->h-1 && x > 0 && (map->tiles[i+map->w-1].type == Map::Tile::None || map->tiles[i+map->w-1].type == Map::Tile::Water || map->tiles[i+map->w-1].type == Map::Tile::Oil)) {
-                        Tile tmp = map->tiles[i+map->w-1];
-                        map->tiles[i+map->w-1] = map->tiles[i];
-                        map->tiles[i] = tmp;
+                    else {
+                        map->tiles[i] = map->emptyTile;
                     }
-                    else if(y < map->h-1 && x < map->w-1 && (map->tiles[i+map->w+1].type == Map::Tile::None || map->tiles[i+map->w+1].type == Map::Tile::Water || map->tiles[i+map->w+1].type == Map::Tile::Oil)) {
-                        Tile tmp = map->tiles[i+map->w+1];
-                        map->tiles[i+map->w+1] = map->tiles[i];
-                        map->tiles[i] = tmp;
-                    }
+                }
 
-                }*/
+
+
+
+
+
+
+
                 if(map->tiles[i].type == Map::Tile::Water) {
                     if(y < map->h-1 && (map->tiles[i+map->w].type == Map::Tile::None || map->tiles[i+map->w].type == Map::Tile::Oil)) {
                         Tile tmp = map->tiles[i+map->w];
@@ -1542,11 +1634,10 @@ struct Map {
             }
         }
 
-        //map->fireSoundInstance->setVolume(min(0.1*map->numBurningTiles, 100));
     }
 
     void renderBg(float screenW, float screenH, sf::RenderWindow &window) {
-        /*
+        
         float mw = w * scaleX;
         float mh = h * scaleY;
         float mx = screenW/2 - mw/2;
@@ -1560,7 +1651,7 @@ struct Map {
             bgSprite.setPosition(mx, my);
             bgSprite.setScale(scaleX, scaleY);
             window.draw(bgSprite);
-        }*/
+        }
     }
 
     void render(float screenW, float screenH, sf::RenderWindow &window);
@@ -2047,7 +2138,7 @@ struct Map {
             int py = mapY(y, screenH);
             if(px != -1 && py != -1) {
                 if(collisionTileType == CollisionTileType::Firm) {
-                    if(tiles[px + py*w].type == Map::Tile::Ground || tiles[px + py*w].type == Map::Tile::Dirt) {
+                    if(tiles[px + py*w].type == Map::Tile::Ground || tiles[px + py*w].type == Map::Tile::Dirt || tiles[px + py*w].type == Map::Tile::GroundTmp || tiles[px + py*w].type == Map::Tile::DirtTmp) {
                         return true;
                     }
                 }
@@ -2604,47 +2695,6 @@ void createExplosion2(float x, float y, float explosionRadius, int numExplosionP
 
 
 struct Bomb : public Item {
-
-    /*struct BombExplosionProjectile : public Projectile {
-        sf::Color color1, color2, color3;
-        float time = 0;
-        float duration1 = 1, duration2 = 1;
-        float risingAcceleration = 0;
-
-        virtual void update(Map &map, float dt) {
-            if(gravityHasAnEffect) {
-                vy += gravity * dt;
-            }
-
-            vy -= dt * risingAcceleration;
-
-            vx = vx * 0.98;
-            vy = vy * 0.98;
-
-            x += vx * dt;
-            y += vy * dt;
-
-            time += dt;
-
-            if(time >= duration1 + duration2) {
-                canBeRemoved = true;
-                return;
-            }
-        }
-
-        virtual sf::Color getPixelColor() {
-            if(time < duration1) {
-                return mix(color1, color2, time/duration1);
-            }
-            else {
-                return mix(color2, color3, (time-duration1)/duration2);
-            }
-        }
-
-        virtual std::string getName() {
-            return "Bomb Explosion Projectile";
-        }
-    };*/
 
 
     struct BombProjectile : public Projectile {
@@ -7695,6 +7745,157 @@ sf::SoundBuffer FireBall::FireBallProjectile::collisionSoundBuffer;
 
 
 
+struct Heart : public Item {
+
+
+    struct HeartSmokeProjectile : public Projectile {
+
+        sf::Color color, color2;
+
+        float time = 0;
+        float duration = 1;
+
+        void update(Map& map, float dt) {
+            if(gravityHasAnEffect) {
+                vy += gravity * dt;
+            }
+            x += vx * dt;
+            y += vy * dt;
+
+            time += dt;
+
+            if(time >= duration) {
+                canBeRemoved = true;
+                return;
+            }
+        }
+
+
+        sf::Color getPixelColor() {
+            return mix(color, color2, time/duration);
+        }
+
+        virtual std::string getName() {
+            return "Heart Smoke Projectile";
+        }
+    };
+
+
+    struct HeartProjectile : public Projectile {
+        static sf::Image image;
+        static sf::Texture texture;
+        static sf::Sprite sprite;
+
+        static sf::SoundBuffer explosionSoundBuffer;
+
+        static void prepare() {
+            if(!image.loadFromFile("data/textures/heart.png")) {
+                printf("Couldn't open file 'data/textures/heart.png'!\n");
+                return;
+            }
+            texture.loadFromImage(image);
+            sf::Vector2u size = image.getSize();
+            sprite.setTexture(texture, true);
+            sprite.setOrigin(size.x/2, size.y/2);
+
+            if(!explosionSoundBuffer.loadFromFile("data/audio/heart3.ogg")) {
+                printf("Couldn't open file 'data/audio/heart3.ogg'!\n");
+                return;
+            }
+        }
+
+        void createExplosion(Map& map, float x, float y, vector<Character*> &characters, float explosionRadius, int numExplosionProjectiles, float explosionProjectileVelocityMin, float explosionProjectileVelocityMax);
+
+
+        void update(Map& map, float dt) {
+            float k = round(max(1+fabs(vx) * dt, 1+fabs(vy) * dt));
+            k = min(k, 100);
+            if(k < 1) k = 1;
+            float _dt = dt/k;
+
+            bool exploded = false;
+            for(int i=0; i<k; i++) {
+                if(gravityHasAnEffect) {
+                    vy += gravity * _dt;
+                }
+                x += vx * _dt;
+                y += vy * _dt;
+
+                exploded = exploded || _update(map, _dt, exploded);
+            }
+        }
+
+        bool _update(Map& map, float dt, bool exploded = false);
+
+        void render(sf::RenderWindow &window, float scaleX, float scaleY) {
+            sprite.setPosition(x, y);
+            sprite.setScale(scaleX, scaleY);
+            window.draw(sprite);
+        }
+
+        bool isRenderSprite() {
+            return true;
+        }
+
+        virtual std::string getName() {
+            return "Heart Projectile";
+        }
+    };
+
+
+    static constexpr float throwingVelocity = 1000;
+
+
+
+    Heart() {}
+    ~Heart() {}
+
+    void use(float x, float y, float vx, float vy, float angle);
+
+    string getName() {
+        return "Heart of Fire";
+    }
+
+    float manaCostPerUse() {
+        return 0;
+    }
+
+    float loadingTimeSeconds() {
+        return 10;
+    }
+
+    float repeatTime() {
+        return 0.25;
+    }
+
+};
+
+sf::Image Heart::HeartProjectile::image;
+sf::Texture Heart::HeartProjectile::texture;
+sf::Sprite Heart::HeartProjectile::sprite;
+
+sf::SoundBuffer Heart::HeartProjectile::explosionSoundBuffer;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 struct Vehicle {
@@ -11295,6 +11496,38 @@ struct Character {
         sf::Vector2u crosshairSize = crosshairImage.getSize();
         crosshairSprite.setOrigin(crosshairSize.x*0.5, crosshairSize.y*0.5);
 
+        addEquipments();
+
+        collisionHandler.init(*this);
+    }
+
+    /*void addIntroEquipments() {
+        for(int i=0; i<items.size(); i++) {
+            delete items[i];
+        }
+        items.clear();
+
+        Heart *heart = new Heart();
+        heart->itemUserCharacter = this;
+        items.push_back(heart);
+
+
+        for(int i=0; i<itemsSecondary.size(); i++) {
+            delete itemsSecondary[i];
+        }
+        itemsSecondary.clear();
+
+        JetPack *jetPack = new JetPack();
+        jetPack->itemUserCharacter = this;
+        itemsSecondary.push_back(jetPack);
+    }*/
+
+    void addEquipments() {
+        for(int i=0; i<items.size(); i++) {
+            delete items[i];
+        }
+        items.clear();
+
         Bomb *bomb = new Bomb();
         bomb->itemUserCharacter = this; // TODO fix
         items.push_back(bomb);
@@ -11376,7 +11609,14 @@ struct Character {
         fireBall->itemUserCharacter = this;
         items.push_back(fireBall);
 
+        Heart *heart = new Heart();
+        heart->itemUserCharacter = this;
+        items.push_back(heart);
 
+        for(int i=0; i<itemsSecondary.size(); i++) {
+            delete itemsSecondary[i];
+        }
+        itemsSecondary.clear();
 
         Digger *digger = new Digger();
         digger->itemUserCharacter = this;
@@ -11411,9 +11651,8 @@ struct Character {
         laserSight->itemUserCharacter = this;
         itemsSecondary.push_back(laserSight);
 
-
-        collisionHandler.init(*this);
     }
+
 
     void addCharacters(vector<Character*> &characters) {
         for(int i=0; i<items.size(); i++) {
@@ -14086,7 +14325,7 @@ void Map::renderFinal(float screenW, float screenH, sf::RenderWindow &window) {
     float mx = screenW/2 - mw/2;
     float my = screenH/2 - mh/2;
 
-    //renderBg(screenW, screenH, window);
+    renderBg(screenW, screenH, window); // TODO check this...
 
     
     /*bgShaderRect.setPosition(mx + viewportX, my + viewportY);
@@ -14577,26 +14816,11 @@ bool Bomb::BombProjectile::_update(Map& map, float dt, bool exploded) {
 
     if(exploded) return exploded;
 
-    //float m = max(vx * dt, vy * dt);
-    /*if(m > 1) {
-        printf("m %f\n", m);
-    }*/
-
     checkInitialSelfCollision();
 
     for(int i=0; i<map.characters.size(); i++) {
         if(map.characters[i] == projectileUserCharacter && initialSelfCollision) continue;
 
-        /*float ax = map.characters[i]->x - map.characters[i]->w*map.characters[i]->scaleX * 0.5;
-        float ay = map.characters[i]->y - map.characters[i]->h*map.characters[i]->scaleY * 0.5;
-        float bx = map.characters[i]->x + map.characters[i]->w*map.characters[i]->scaleX * 0.5;
-        float by = map.characters[i]->y + map.characters[i]->h*map.characters[i]->scaleY * 0.5;
-
-        if(isWithinRect(x, y, ax, ay, bx, by)) {
-            createExplosion(map, x, y, characters, 100, 1000, 0, 200);
-            exploded = true;
-            canBeRemoved = true;
-        }*/
         if(map.characters[i]->intersects(x, y)) {
             createExplosion(map, x, y, characters, 100, 1000, 0, 200);
             exploded = true;
@@ -20023,6 +20247,206 @@ bool FireBall::FireBallProjectile::_update(Map& map, float dt, int m, bool explo
 
 
 
+bool Heart::HeartProjectile::_update(Map& map, float dt, bool exploded) {
+
+    if(exploded) return exploded;
+
+    for(int i=0; i<5; i++) {
+        HeartSmokeProjectile *heartSmokeProjectile = new HeartSmokeProjectile();
+
+        float angle = randf(0, 2.0*Pi);
+        //float angle = counter + randf(-0.1, 0.1);
+        float v = randf(0, 250);
+        heartSmokeProjectile->vx = v * cos(angle);
+        heartSmokeProjectile->vy = v * sin(angle);
+        //float angle2 = randf(0, 2.0*Pi);
+        heartSmokeProjectile->x = x;
+        heartSmokeProjectile->y = y;
+        heartSmokeProjectile->gravityHasAnEffect = false;
+        int c = randi(0, 200);
+        heartSmokeProjectile->color = sf::Color(c, 0, 0, randi(50, 255));
+        heartSmokeProjectile->color2 = sf::Color(0, 0, 0, 0);
+        heartSmokeProjectile->duration = randf(0.5, 2);
+        //doomsDaySmokeProjectile->characters = characters;
+        heartSmokeProjectile->projectileUserCharacter = projectileUserCharacter;
+        heartSmokeProjectile->projectileUserVehicle = projectileUserVehicle;
+        projectiles.push_back(heartSmokeProjectile);
+    }
+
+    checkInitialSelfCollision();
+
+    for(int i=0; i<map.characters.size(); i++) {
+        if(map.characters[i] == projectileUserCharacter && initialSelfCollision) continue;
+
+        if(map.characters[i]->intersects(x, y)) {
+            createExplosion(map, x, y, characters, 60, 1000, 0, 200);
+            exploded = true;
+            canBeRemoved = true;
+            return true; // TODO check this!
+        }
+    }
+
+    for(int i=0; i<vehicles.size(); i++) {
+        if(vehicles[i] == projectileUserVehicle && initialSelfCollision) continue;
+        int ix = 0, iy = 0;
+        if(vehicles[i]->checkPixelPixelCollision(x, y, ix, iy)) {
+            createExplosion(map, x, y, characters, 60, 1000, 0, 200);
+            exploded = true;
+            canBeRemoved = true;
+            return true; // TODO check this!
+        }
+    }
+
+    bool collided = map.checkCollision(x, y);
+    if(collided) {
+        createExplosion(map, x, y, characters, 60, 1000, 0, 200);
+        exploded = true;
+        canBeRemoved = true;
+    }
+
+    return exploded;
+}
+
+
+
+
+
+void Heart::HeartProjectile::createExplosion(Map& map, float x, float y, vector<Character*> &characters, /*ExplosionProjectile::Direction dir,*/ float explosionRadius, int numExplosionProjectiles, float explosionProjectileVelocityMin, float explosionProjectileVelocityMax) {
+
+    soundWrapper.playSoundBuffer(explosionSoundBuffer);
+
+    for(int i=0; i<map.characters.size(); i++) {
+        float dx = map.characters[i]->x - x;
+        float dy = map.characters[i]->y - y;
+
+        float dist = sqrt(dx*dx + dy*dy);
+
+        if(dist <= explosionRadius) {
+            //map.characters[i]->takeDamage(25, 1, 1, 0, 0);
+        }
+    }
+
+    for(int i=0; i<vehicles.size(); i++) {
+        if(vehicles[i]->checkCirclePixelCollision(x, y, explosionRadius)) {
+            //vehicles[i]->takeDamage(25);
+        }
+    }
+
+    float rr = explosionRadius * explosionRadius;
+    for(int i=-explosionRadius; i<explosionRadius; i++) {
+        for(int j=-explosionRadius; j<explosionRadius; j++) {
+            float trr = i*i + j*j;
+            if(trr < rr) {
+                float tx = map.mapX(x+i, screenW);
+                float ty = map.mapY(y+j, screenH);
+                if(map.isTileWithin(tx, ty) && map.tiles[tx + ty*map.w].type != Map::Tile::None) {
+                    if(map.tiles[tx + ty*map.w].flammable) {
+                        map.tiles[tx + ty*map.w].burning = true;
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+    float rr = explosionRadius * explosionRadius;
+    float rrPlus1 = (explosionRadius+1) * (explosionRadius+1);
+
+    vector<Map::Tile> explodedTiles;
+
+    for(int i=-explosionRadius-1; i<explosionRadius+1; i++) {
+        for(int j=-explosionRadius-1; j<explosionRadius+1; j++) {
+            float trr = i*i + j*j;
+            if(trr < rr) {
+                float tx = map.mapX(x+i, screenW);
+                float ty = map.mapY(y+j, screenH);
+                if(map.isTileWithin(tx, ty) && map.tiles[tx + ty*map.w].type != Map::Tile::None) {
+                    if(map.tiles[tx + ty*map.w].flammable) {
+                        map.tiles[tx + ty*map.w].burning = true;
+                    }
+                    explodedTiles.push_back(map.tiles[tx + ty*map.w]);
+                    map.tiles[tx + ty*map.w] = map.emptyTile;
+                }
+            }
+            else if(trr < rrPlus1) {
+                float tx = map.mapX(x+i, screenW);
+                float ty = map.mapY(y+j, screenH);
+                if(map.isTileWithin(tx, ty) && map.tiles[tx + ty*map.w].type != Map::Tile::None) {
+                    if(map.tiles[tx + ty*map.w].flammable) {
+                        map.tiles[tx + ty*map.w].burning = true;
+                    }
+                }
+            }
+        }
+    }
+
+    for(int i=0; i<explodedTiles.size(); i++) {
+        ExplosionProjectile *explosionProjectile = new ExplosionProjectile();
+        float angle = randf(0, 2.0*Pi);
+        float v = randf(explosionProjectileVelocityMin, explosionProjectileVelocityMax);
+        explosionProjectile->vx = v * cos(angle);
+        explosionProjectile->vy = v * sin(angle);
+        float r = randf(0, explosionRadius);
+        explosionProjectile->x = x + r * cos(angle);
+        explosionProjectile->y = y + r * sin(angle);
+        //explosionProjectile->x = x + 1 * 1.0/60 * cos(angle);
+        //explosionProjectile->y = y + 1 * 1.0/60 * sin(angle);
+        explosionProjectile->gravityHasAnEffect = true;
+        explosionProjectile->type = ExplosionProjectile::Type::FlyingTile;
+        explosionProjectile->flyingTile.tile = explodedTiles[i];
+        if(explosionProjectile->flyingTile.tile.type == Map::Tile::Type::Ground) {
+            explosionProjectile->flyingTile.tile.type = Map::Tile::Type::Dirt;
+        }
+        projectiles.push_back(explosionProjectile);
+    }
+
+
+    createExplosion2(x, y, explosionRadius, numExplosionProjectiles, explosionProjectileVelocityMin, explosionProjectileVelocityMax);
+    */
+}
+
+
+
+
+
+
+void Heart::use(float x, float y, float vx, float vy, float angle) {
+
+    HeartProjectile *heartProjectile = new HeartProjectile();
+    float m = 0;
+    if(itemUserCharacter) {
+        m = max(itemUserCharacter->w*itemUserCharacter->scaleX, itemUserCharacter->h*itemUserCharacter->scaleY) * 0.5;
+    }
+    else if(itemUserVehicle) {
+        m = max(itemUserVehicle->w*itemUserVehicle->scaleX, itemUserVehicle->h*itemUserVehicle->scaleY) * 0.5;
+    }
+
+    heartProjectile->x = x + m * cos(angle);
+    heartProjectile->y = y + m * sin(angle);
+    heartProjectile->vx = /*vx +*/ throwingVelocity * cos(angle);
+    heartProjectile->vy = /*vy +*/ throwingVelocity * sin(angle);
+    heartProjectile->gravityHasAnEffect = true;
+    heartProjectile->characters = characters;
+    heartProjectile->projectileUserCharacter = itemUserCharacter;
+    heartProjectile->projectileUserVehicle = itemUserVehicle;
+    projectiles.push_back(heartProjectile);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void ExplosionProjectile::update(Map& map, float dt) {
     if(gravityHasAnEffect) {
@@ -20454,6 +20878,8 @@ void prepareProjectiles() {
     LaserCannon::LaserBoltProjectile::prepare();
     ClusterMortar::ClusterProjectile::prepare();
     FireBall::FireBallProjectile::prepare();
+    Heart::HeartProjectile::prepare();
+
 }
 
 void updateProjectiles(Map &map, float dt) {
@@ -20503,13 +20929,33 @@ void renderVehicles(sf::RenderWindow &window) {
 
 
 
+bool isFinland(int r, int g, int b, int a) {
+    return (r == 0 && g == 82 && b == 170) ||
+    (r == 255 && g == 255 && b == 255) && a > 250;
+}
+bool isUkraine(int r, int g, int b, int a) {
+    return (r == 0 && g == 91 && b == 187) ||
+    (r == 255 && g == 213 && b == 0) && a > 250;
+}
 
 
 
-int main() {
+int main(int argc, char **argv) {
     
     //VALGRIND_DISABLE_ERROR_REPORTING;
     //CALLGRIND_STOP_INSTRUMENTATION;
+	
+	int displayMode = 0;
+	
+	for(int i=1; i<argc; i++) {
+		//printf("%s\n", argv[i]);
+		if(strcmp(argv[i], "-display_mode") == 0) {
+			if(argc > i) {
+				printf("requested display mode is %s\n", argv[i+1]);
+				displayMode = atoi(argv[i+1]);
+			}
+		}
+	}
 
     srand(time(NULL));
 
@@ -20535,8 +20981,12 @@ int main() {
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 0;
+	
+	if(displayMode < 0 || displayMode >= modes.size()) {
+		displayMode = 0;
+	}
 
-    sf::RenderWindow window(modes[0], "Bang Bang", sf::Style::Fullscreen);
+    sf::RenderWindow window(modes[displayMode], "Bang Bang", sf::Style::Fullscreen);
     //sf::RenderWindow window(sf::VideoMode(screenW, screenH), "Animated pixels", sf::Style::Default, settings);
         //sf::Style::Titlebar | sf::Style::Close);
 
@@ -20554,12 +21004,23 @@ int main() {
     if (!font.loadFromFile("data/fonts/georgia/Georgia.ttf")) {
         printf("Failed to load font 'data/fonts/georgia/Georgia.ttf'\n");
     }
+
+    sf::Font fontFixedWidth;
+    if (!fontFixedWidth.loadFromFile("data/fonts/fixedsys/Fixedsys.ttf")) {
+        printf("Failed to load font 'data/fonts/fixedsys/Fixedsys.ttf'\n");
+    }
+    /*if (!fontFixedWidth.loadFromFile("data/fonts/semi-coder/Semi-Coder-Regular.otf")) {
+        printf("Failed to load font 'data/fonts/semi-coder/Semi-Coder-Regular.otf'\n");
+    }*/
+
     /*if(!font.loadFromFile("data/fonts/8bitOperatorPlus8-Regular.ttf")) {
         printf("Failed to load font 'data/fonts/8bitOperatorPlus8-Regular.ttf'\n");
     }*/
     /*if (!font.loadFromFile("data/fonts/Starmap/00TT.TTF")) {
         printf("Failed to load font 'data/fonts/Starmap/00TT.TTF'\n");
     }*/
+
+    bool showNowPlayingTrack = true;
 
 
     sf::Text fpsText;
@@ -20637,13 +21098,245 @@ int main() {
     walkerTest->setup(&map, "walker3");
     vehicles.push_back(walkerTest);*/
 
+    MusicAlbum folkSongsFromUkraina;
+    folkSongsFromUkraina.setup(time(NULL));
+    folkSongsFromUkraina.openAlbum("songs_from_ukraina", "", 1, "ogg");
+    folkSongsFromUkraina.repeatPlayList = false;
+    folkSongsFromUkraina.play();
 
     MusicAlbum organWorks;
     organWorks.setup(time(NULL));
     organWorks.openAlbum("organ_works", "Lassi P.", 20, "ogg");
-    organWorks.shufflePlayList();
-    organWorks.play();
+    if(!showNowPlayingTrack) {
+        organWorks.shufflePlayList();
+    }
+    //organWorks.play();
 
+
+    struct BorderGlowItem {
+        int px = 0;
+        int py = 0;
+        sf::Color color;
+        BorderGlowItem() {}
+        BorderGlowItem(int px, int py, sf::Color color) {
+            this->px = px;
+            this->py = py;
+            this->color = color;
+        }
+    };
+
+    struct GlowProjectile : public Projectile {
+        sf::Color color;
+        sf::Color color2;
+
+        float time = 0;
+        float duration = 3;
+
+        void update(Map& map, float dt) {
+            if(gravityHasAnEffect) {
+                vy += gravity * dt;
+            }
+            x += vx * dt;
+            y += vy * dt;
+
+            time += dt;
+
+            if(time >= duration) {
+                canBeRemoved = true;
+                return;
+            }
+        }
+
+        sf::Color getPixelColor() {
+            return mix(color, color2, time/duration);
+        }
+        virtual std::string getName() {
+            return "Glow Projectile";
+        }
+    };
+
+    std::vector<BorderGlowItem> glowingBorders;
+
+    {
+        PixelImage mapOfEurope;
+        mapOfEurope.loadFromFile("start_stuff/MapOfEurope03_x.png");
+        
+        int mw = 0, mh = 0;
+
+        if(mapOfEurope.w / map.w > mapOfEurope.h / map.h) {
+            mw = map.w;
+            mh = map.w * ((float)mapOfEurope.h / mapOfEurope.w);
+        }
+        else {
+            mh = map.h;
+            mw = map.h * ((float)mapOfEurope.w / mapOfEurope.h);
+        }
+
+        PixelImage mapOfEuropePixels;
+        mapOfEuropePixels.initPixels(mw, mh);
+
+        for(int x=0; x<mw; x++) {
+            for(int y=0; y<mh; y++) {
+                int i = (x + y * mw) * 4;
+
+                int x2 = mapf(x, 0, mw-1, 0, mapOfEurope.w-1);
+                int y2 = mapf(y, 0, mh-1, 0, mapOfEurope.h-1);
+                int j = (x2 + y2 * mapOfEurope.w) * 4;
+                
+                mapOfEuropePixels.pixels[i+0] = mapOfEurope.pixels[j+0];
+                mapOfEuropePixels.pixels[i+1] = mapOfEurope.pixels[j+1];
+                mapOfEuropePixels.pixels[i+2] = mapOfEurope.pixels[j+2];
+                mapOfEuropePixels.pixels[i+3] = mapOfEurope.pixels[j+3];
+            }
+        }
+
+        mapOfEuropePixels.updatePixels();
+
+        mapOfEuropePixels.scaleX = 3;
+        mapOfEuropePixels.scaleY = 3;
+
+
+
+        PixelImage mapOfEuropeNoise;
+        mapOfEuropeNoise.loadFromFile("start_stuff/MapOfEurope03_x_noise.png");
+
+
+        int dx = map.w / 2 - mw / 2;
+        int dy = map.h / 2 - mh / 2;
+
+        for(int x=0; x<mw; x++) {
+            for(int y=0; y<mh; y++) {
+                int i = (x + y * mw) * 4;
+                
+                int r = mapOfEuropePixels.pixels[i+0];
+                int g = mapOfEuropePixels.pixels[i+1];
+                int b = mapOfEuropePixels.pixels[i+2];
+                int a = mapOfEuropePixels.pixels[i+3];
+
+                int px = clamp(dx + x, 0, map.w-1);
+                int py = clamp(dy + y, 0, map.h-1);
+                int j = px + py * map.w;
+
+                int country = 0;
+                
+                if(isFinland(r, g, b, a))  {
+                    country = 1;
+                    int counter = 0;
+                    if(x > 0) {
+                        int rx = mapOfEuropePixels.pixels[i-4+0];
+                        int gx = mapOfEuropePixels.pixels[i-4+1];
+                        int bx = mapOfEuropePixels.pixels[i-4+2];
+                        int ax = mapOfEuropePixels.pixels[i-4+3];
+                        if(!isFinland(rx, gx, bx, ax)) {
+                            counter++;
+                        }
+                    }
+                    if(y > 0) {
+                        int rx = mapOfEuropePixels.pixels[i-mw*4+0];
+                        int gx = mapOfEuropePixels.pixels[i-mw*4+1];
+                        int bx = mapOfEuropePixels.pixels[i-mw*4+2];
+                        int ax = mapOfEuropePixels.pixels[i-mw*4+3];
+                        if(!isFinland(rx, gx, bx, ax)) {
+                            counter++;
+                        }
+                    }
+                    if(x < mw-1) {
+                        int rx = mapOfEuropePixels.pixels[i+4+0];
+                        int gx = mapOfEuropePixels.pixels[i+4+1];
+                        int bx = mapOfEuropePixels.pixels[i+4+2];
+                        int ax = mapOfEuropePixels.pixels[i+4+3];
+                        if(!isFinland(rx, gx, bx, ax)) {
+                            counter++;
+                        }
+                    }
+                    if(y < mh-1) {
+                        int rx = mapOfEuropePixels.pixels[i+mw*4+0];
+                        int gx = mapOfEuropePixels.pixels[i+mw*4+1];
+                        int bx = mapOfEuropePixels.pixels[i+mw*4+2];
+                        int ax = mapOfEuropePixels.pixels[i+mw*4+3];
+                        if(!isFinland(rx, gx, bx, ax)) {
+                            counter++;
+                        }
+                    }
+                    if(counter > 0) {
+                        glowingBorders.push_back(
+                            BorderGlowItem(dx+x, dy+y, sf::Color(r, g, b, a)));
+                    }
+                }
+                else if(isUkraine(r, g, b, a))  {
+                    country = 2;
+                    int counter = 0;
+                    if(x > 0) {
+                        int rx = mapOfEuropePixels.pixels[i-4+0];
+                        int gx = mapOfEuropePixels.pixels[i-4+1];
+                        int bx = mapOfEuropePixels.pixels[i-4+2];
+                        int ax = mapOfEuropePixels.pixels[i-4+3];
+                        if(!isUkraine(rx, gx, bx, ax)) {
+                            counter++;
+                        }
+                    }
+                    if(y > 0) {
+                        int rx = mapOfEuropePixels.pixels[i-mw*4+0];
+                        int gx = mapOfEuropePixels.pixels[i-mw*4+1];
+                        int bx = mapOfEuropePixels.pixels[i-mw*4+2];
+                        int ax = mapOfEuropePixels.pixels[i-mw*4+3];
+                        if(!isUkraine(rx, gx, bx, ax)) {
+                            counter++;
+                        }
+                    }
+                    if(x < mw-1) {
+                        int rx = mapOfEuropePixels.pixels[i+4+0];
+                        int gx = mapOfEuropePixels.pixels[i+4+1];
+                        int bx = mapOfEuropePixels.pixels[i+4+2];
+                        int ax = mapOfEuropePixels.pixels[i+4+3];
+                        if(!isUkraine(rx, gx, bx, ax)) {
+                            counter++;
+                        }
+                    }
+                    if(y < mh-1) {
+                        int rx = mapOfEuropePixels.pixels[i+mw*4+0];
+                        int gx = mapOfEuropePixels.pixels[i+mw*4+1];
+                        int bx = mapOfEuropePixels.pixels[i+mw*4+2];
+                        int ax = mapOfEuropePixels.pixels[i+mw*4+3];
+                        if(!isUkraine(rx, gx, bx, ax)) {
+                            counter++;
+                        }
+                    }
+                    if(counter > 0) {
+                        glowingBorders.push_back(
+                            BorderGlowItem(dx+x, dy+y, sf::Color(r, g, b, a)));
+                    }
+                }
+
+                if(a > 100) {
+                    map.tiles[j].type = Map::Tile::Type::GroundTmp;
+                    map.tiles[j].flammable = country == 0;
+                    map.tiles[j].burning = false;
+                    map.tiles[j].health = randf2(0.05, 0.2);
+
+                    int xfi = min(x, mapOfEuropeNoise.w-1);
+                    int yfi = min(y, mapOfEuropeNoise.h-1);
+                    int fi = (xfi + yfi*mapOfEuropeNoise.w) * 4;
+                    float f = (float)mapOfEuropeNoise.pixels[fi] / 255.0;
+
+                    map.tiles[j].color = sf::Color(f*r, f*g, f*b, a);
+                }
+                else {
+                    map.tiles[j].type = Map::Tile::Type::None;
+                }
+
+            }
+        }
+
+        
+    }
+
+    PixelImage cliBg;
+    cliBg.initPixels(240, 200);
+    cliBg.updatePixels();
+    cliBg.scaleX = scaleX;
+    cliBg.scaleY = scaleY;
+    float cliBgTimer = 1;
 
     //VALGRIND_ENABLE_ERROR_REPORTING;
     //CALLGRIND_START_INSTRUMENTATION;
@@ -20677,7 +21370,63 @@ int main() {
         "",
         "window.display()"};*/
         
-                                                       
+    bool introActive = true;
+
+    character.activeItem = 20;
+    character.activeItemSecondary = 1;
+    character2.activeItem = 20;
+    character2.activeItemSecondary = 1;
+    character.x = 50;
+    character.y = screenH - 50;
+    character2.x = screenW - 50;
+    character2.y = screenH - 50;
+
+    std::string introTextStr =  "$> Hello world!\n"
+                                "$> Europe has gone mad.\n"
+                                "$> The graceful age of peace in Europe\n"
+                                "has come to an end.\n"
+                                "$> Russia started a war and attacked to\n"
+                                "the peaceful land of Ukraine in 2022.\n"
+                                "$> RUSSIA WTF?\n"
+                                "$> This game has nothing to do with the\n"
+                                "ongoing war.\n"
+                                "$> Greetings from a pacifist who created\n"
+                                "this war game.\n"
+                                "$> I truly and deeply despise every kind\n"
+                                "of oppression.\n"
+                                "$> Let's only play with virtual weapons.\n"
+                                "$> From Finland to Ukraine with <3.\n"
+                                "$> 12.6.2023. L. P.\n"
+                                "$> ";
+    /*std::string introTextStr =  "$> Hello world!^\n"
+                                "$> Europe has gone mad.^\n"
+                                "$> The graceful age of peace in Europe\n"
+                                "has come to an end.^\n"
+                                "$> Russia started a war and attacked to\n"
+                                "the peaceful land of Ukraine in 2022.^\n"
+                                "$> RUSSIA WTF?^\n"
+                                "$> This game has nothing to do with the\n"
+                                "ongoing war.^\n"
+                                "$> Greetings from a pacifist who created\n"
+                                "this war game.^\n"
+                                "$> I truly and deeply despise every kind\n"
+                                "of oppression.^\n"
+                                "$> Let's only play with virtual weapons.^\n"
+                                "$> From Finland to Ukraine with <3.^\n"
+                                "$> 12.6.2023. L. P.^\n";*/
+
+    sf::Text introText;
+    introText.setFont(fontFixedWidth);
+    introText.setString("");
+    introText.setCharacterSize(32);
+    introText.setFillColor(sf::Color::White);
+
+    float introTextTimerLine = 0;
+    float introTextTimerCharacter = 0;
+    int introTextOffsetTotal = 0;
+    int introTextOffset = 0;
+    std::vector<std::string> introTextLines;
+    std::string introTextLine;
 
 
     while(window.isOpen()) {
@@ -20832,10 +21581,10 @@ int main() {
             /*if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F1) {
                 map.fieldOfVision = Map::FieldOfVision((map.fieldOfVision+1) % 3);
             }*/
-            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
+            if(!introActive && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
                 character.computerControl.isActive = !character.computerControl.isActive;
             }
-            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F3) {
+            if(!introActive && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F3) {
                 character2.computerControl.isActive = !character2.computerControl.isActive;
             }
 
@@ -20888,7 +21637,7 @@ int main() {
                 character.stopUseItemSecondary();
             }
             //if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::BackSpace) {
-            if(event.type == sf::Event::KeyPressed && event.key.code == 12) {
+            if(!introActive && event.type == sf::Event::KeyPressed && event.key.code == 12) {
                 character.changeItem();
             }
             //if(event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::BackSpace) {
@@ -20941,7 +21690,7 @@ int main() {
             if(event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::Tab) {
                 character2.stopUseItemSecondary();
             }
-            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Q) {
+            if(!introActive && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Q) {
                 character2.changeItem();
             }
             /*if(event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::Q) {
@@ -21016,6 +21765,12 @@ int main() {
                 soundWrapper.setMasterVolume(v);
             }
 
+            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
+                //folkSongsFromUkraina.isPlaying = false;
+                folkSongsFromUkraina.pause();
+                folkSongsFromUkraina.playListIndex = 1;
+            }
+
             /*if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::H) {
                 map.startEarthquake(0);
             }
@@ -21026,13 +21781,41 @@ int main() {
 
         }
 
+        if(introActive && !folkSongsFromUkraina.isPlaying && folkSongsFromUkraina.playListIndex > 0) {
+            organWorks.play();
+
+            introActive = false;
+
+            map.startEarthquake(Map::EarthquakeType::earthquakeActual);
+        }
+        if(introActive) {
+            for(int i=0; i<glowingBorders.size(); i++) {
+                if(randf2(0, 1) < 0.125) {
+                    GlowProjectile *p = new GlowProjectile();
+                    p->x = glowingBorders[i].px * scaleX;
+                    p->y = glowingBorders[i].py * scaleY;
+                    float v = randf2(5, 100);
+                    float a = randf2(0, 2.0*Pi);
+                    p->vy = v * cos(a);
+                    p->vx = v * sin(a);
+                    p->duration = randf2(0.5, 2.0);
+                    p->color = glowingBorders[i].color;
+                    p->color2 = sf::Color(0, 0, 0, 0);
+                    p->gravityHasAnEffect = false;
+                    projectiles.push_back(p);
+                }
+            }
+        }
+
         //float t0 = timer.tock();
         //tickTock[0] = max(t0, tickTock[0]);
         //avgTimes[0][frameCounter] = t0;
 
         //timer.tick();
         soundWrapper.update(timer.frameTime);
+        folkSongsFromUkraina.update();
         organWorks.update();
+
         //float t1 = timer.tock();
         //tickTock[1] = max(t1, tickTock[1]);
         //avgTimes[1][frameCounter] = t1;
@@ -21097,6 +21880,13 @@ int main() {
         //float t8 = timer.tock();
         //tickTock[8] = max(t8, tickTock[8]);
         //avgTimes[8][frameCounter] = t8;
+
+
+        //mapOfEurope.render(window);
+        /*int x = screenW / 2 - (mapOfEuropePixels.w * mapOfEuropePixels.scaleX) / 2;
+        int y = screenH / 2 - (mapOfEuropePixels.h * mapOfEuropePixels.scaleY) / 2;
+        mapOfEuropePixels.render(window, x, y);*/
+
 
 
         //timer.tick();
@@ -21175,17 +21965,22 @@ int main() {
                 window.draw(characterStatusText);
             }
 
-            hpRect.setPosition(character.x-barWidth*0.5, character.y - character.h*0.5*scaleY - 37);
+            int hpRectX = character.x-barWidth*0.5;
+            int hpRectY = character.y - character.h*0.5*scaleY - 37;
+            int manaRectX = character.x-barWidth*0.5;
+            int manaRectY = character.y - character.h*0.5*scaleY - 20;
+            
+            hpRect.setPosition(hpRectX, hpRectY);
             hpRect.setSize(sf::Vector2f(barWidth*character.hp/character.maxHp, barHeight));
             window.draw(hpRect);
-            borderRect.setPosition(character.x-barWidth*0.5, character.y - character.h*0.5*scaleY - 37);
+            borderRect.setPosition(hpRectX, hpRectY);
             borderRect.setSize(sf::Vector2f(barWidth, barHeight));
             window.draw(borderRect);
 
-            manaRect.setPosition(character.x-barWidth*0.5, character.y - character.h*0.5*scaleY - 20);
+            manaRect.setPosition(manaRectX, manaRectY);
             manaRect.setSize(sf::Vector2f(barWidth*character.items[character.activeItem]->itemMana/character.maxMana, barHeight));
             window.draw(manaRect);
-            borderRect.setPosition(character.x-barWidth*0.5, character.y - character.h*0.5*scaleY - 20);
+            borderRect.setPosition(manaRectX, manaRectY);
             borderRect.setSize(sf::Vector2f(barWidth, barHeight));
             window.draw(borderRect);
         }
@@ -21203,17 +21998,22 @@ int main() {
                 window.draw(characterStatusText);
             }
 
-            hpRect.setPosition(character2.x-barWidth*0.5, character2.y - character2.h*0.5*scaleY - 37);
+            int hpRectX = character2.x-barWidth*0.5;
+            int hpRectY = character2.y - character.h*0.5*scaleY - 37;
+            int manaRectX = character2.x-barWidth*0.5;
+            int manaRectY = character2.y - character.h*0.5*scaleY - 20;
+
+            hpRect.setPosition(hpRectX, hpRectY);
             hpRect.setSize(sf::Vector2f(barWidth*character2.hp/character2.maxHp, barHeight));
             window.draw(hpRect);
-            borderRect.setPosition(character2.x-barWidth*0.5, character2.y - character2.h*0.5*scaleY - 37);
+            borderRect.setPosition(hpRectX, hpRectY);
             borderRect.setSize(sf::Vector2f(barWidth, barHeight));
             window.draw(borderRect);
 
-            manaRect.setPosition(character2.x-barWidth*0.5, character2.y - character2.h*0.5*scaleY - 20);
+            manaRect.setPosition(manaRectX, manaRectY);
             manaRect.setSize(sf::Vector2f(barWidth*character2.items[character2.activeItem]->itemMana/character2.maxMana, barHeight));
             window.draw(manaRect);
-            borderRect.setPosition(character2.x-barWidth*0.5, character2.y - character2.h*0.5*scaleY - 20);
+            borderRect.setPosition(manaRectX, manaRectY);
             borderRect.setSize(sf::Vector2f(barWidth, barHeight));
             window.draw(borderRect);
         }
@@ -21222,100 +22022,169 @@ int main() {
         //avgTimes[13][frameCounter] = t13;
 
 
+
+
         //character.collisionHandler.renderCollisionPoints(window, character);
         
         //timer.tick();
 
-        
-        float angle = character.aimAngle;
-        if(character.inThisVehicle) {
-            angle = character.inThisVehicle->aimAngle;
-        }
-
-        float gangle = character.globalAngle;
-        if(character.inThisVehicle) {
-            gangle = character.inThisVehicle->globalAngle;
-        }
-
-        float distCC = 0;
-        float x1 = 0, y1 = 0;
-        float x2 = 0, y2 = 0;
-        if(character.inThisVehicle) {
-            x1 = character.inThisVehicle->x;
-            y1 = character.inThisVehicle->y;
-        }
-        else {
-            x1 = character.x;
-            y1 = character.y;
-        }
-        if(character2.inThisVehicle) {
-            x2 = character2.inThisVehicle->x;
-            y2 = character2.inThisVehicle->y;
-        }
-        else {
-            x2 = character2.x;
-            y2 = character2.y;
-        }
-        distCC = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
-
-        std::string nowPlaying = organWorks.getCurrentlyPlayingPieceName();
-        //float musicOffset = organWorks.getCurrentlyPlayingPieceOffsetSeconds();
-
-        fpsText.setString("music: " + nowPlaying + "\n" +
-                          //" - " + to_string(musicOffset) + " s" + "\n" +
-                          "time " + to_string(timer.totalTime) + "\n" +
-                          //"dt " + to_string(timer.frameTime) + "\n" +
-                          "fps " + to_string(timer.fps)+ "\n" +
-                          "num projectiles "+to_string(projectiles.size())+ "\n" +
-                          "num sounds "+to_string(soundWrapper.soundVector.size()) +
-                          //"\naim angle " + to_string(angle) + 
-                          //"\nglobal angle " + to_string(gangle) +
-                          "\ndist " + to_string(distCC));
-
-        fpsTextRect.setPosition(0, 0);
-        fpsTextRect.setSize(sf::Vector2f(250, 120));
-        window.draw(fpsTextRect);
-
-        window.draw(fpsText);
-
-        /*std::string nowPlaying = organWorks.getCurrentlyPlayingPieceName();
-        int trackOffset = organWorks.getCurrentlyPlayingPieceOffsetSeconds();
-        int trackDuration = organWorks.getCurrentlyPlayingPieceDurationSeconds();
-
-        std::string trackText = "Music starting soon...";
-
-        if(nowPlaying.size() > 0) {
-            trackText = nowPlaying;
-            int minutesOffset = trackOffset / 60;
-            int secondsOffset = trackOffset - minutesOffset * 60;    
-            std::string offset = "0" + std::to_string(minutesOffset) + ":";
-            if(secondsOffset < 10) {
-                offset += "0";
+        if(!showNowPlayingTrack) {
+            float angle = character.aimAngle;
+            if(character.inThisVehicle) {
+                angle = character.inThisVehicle->aimAngle;
             }
-            offset += std::to_string(secondsOffset);
 
-            int minutesDuration = trackDuration / 60;
-            int secondsDuration = trackDuration - minutesDuration * 60;
-            std::string duration = "0" + std::to_string(minutesDuration) + ":";
-            if(secondsDuration < 10) {
-                duration += "0";
+            float gangle = character.globalAngle;
+            if(character.inThisVehicle) {
+                gangle = character.inThisVehicle->globalAngle;
             }
-            duration += std::to_string(secondsDuration);
 
-            trackText += "\n" + offset + " / " + duration;
+            float distCC = 0;
+            float x1 = 0, y1 = 0;
+            float x2 = 0, y2 = 0;
+            if(character.inThisVehicle) {
+                x1 = character.inThisVehicle->x;
+                y1 = character.inThisVehicle->y;
+            }
+            else {
+                x1 = character.x;
+                y1 = character.y;
+            }
+            if(character2.inThisVehicle) {
+                x2 = character2.inThisVehicle->x;
+                y2 = character2.inThisVehicle->y;
+            }
+            else {
+                x2 = character2.x;
+                y2 = character2.y;
+            }
+            distCC = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+
+            std::string nowPlaying = organWorks.getCurrentlyPlayingPieceName();
+            //float musicOffset = organWorks.getCurrentlyPlayingPieceOffsetSeconds();
+
+            if(folkSongsFromUkraina.isPlaying) {
+                nowPlaying = "Ukrainian Folk Song";
+            }
+
+            fpsText.setString("music: " + nowPlaying + "\n" +
+                            //" - " + to_string(musicOffset) + " s" + "\n" +
+                            "time " + to_string(timer.totalTime) + "\n" +
+                            //"dt " + to_string(timer.frameTime) + "\n" +
+                            "fps " + to_string(timer.fps)+ "\n" +
+                            "num projectiles "+to_string(projectiles.size())+ "\n" +
+                            "num sounds "+to_string(soundWrapper.soundVector.size()) +
+                            //"\naim angle " + to_string(angle) + 
+                            //"\nglobal angle " + to_string(gangle) +
+                            "\ndist " + to_string(distCC));
+
+            fpsTextRect.setPosition(0, 0);
+            fpsTextRect.setSize(sf::Vector2f(250, 120));
+            window.draw(fpsTextRect);
+
+            window.draw(fpsText);
         }
-        if(!organWorks.isPlaying && organWorks.playListIndex > 0) {
-            trackText = "Thanks for\nlistening!";
+
+        if(introActive) {
+            cliBgTimer += min(1.0/60.0, timer.frameTime);
+            if(cliBgTimer > 0.1) {
+                cliBgTimer = 0;
+                for(int x=0; x<cliBg.w; x++) {
+                    for(int y=0; y<cliBg.h; y++) {
+                        int i = (x + y*cliBg.w) * 4;
+                        if(x <= 0 || x >= cliBg.w - 1 ||
+                        y <= 0 || y >= cliBg.h - 1) {
+                            cliBg.pixels[i+0] = 255;
+                            cliBg.pixels[i+1] = 255;
+                            cliBg.pixels[i+2] = 255;
+                            cliBg.pixels[i+3] = 255;
+                        }
+                        else {
+                            int c = randf(100, 140);
+                            cliBg.pixels[i+0] = c;
+                            cliBg.pixels[i+1] = c/2;
+                            cliBg.pixels[i+2] = c/4;
+                            cliBg.pixels[i+3] = 150;
+                        }
+                    }
+                }
+                cliBg.updatePixels();
+            }
+            cliBg.render(window, 100-20, 300-20);
+
+            std::string str;
+
+            if(introTextTimerLine >= 0) {
+                introTextTimerLine += min(1.0/60.0, timer.frameTime);
+                if(introTextTimerLine >= 1.0) {
+                    introTextTimerLine = -1;
+                }
+            }
+            else {
+                introTextTimerCharacter += min(1.0/60.0, timer.frameTime);
+                if(introTextOffsetTotal < introTextStr.size()) {
+                    if(introTextTimerCharacter > 0.15) {
+                        introTextTimerCharacter = 0;
+                        char c = introTextStr[introTextOffsetTotal];
+                        if(c == ' ' && introTextStr[introTextOffsetTotal-1] == '>') {
+                            introTextTimerLine = 0;
+                        }
+                        introTextLine += c;
+                        introTextOffsetTotal++;
+                    }
+                }
+            }
+
+            introText.setString(introTextLine + "_");
+
+            introText.setPosition(100, 300);
+
+            window.draw(introText);
         }
 
-        trackDetailsText.setString(trackText);
-        trackDetailsText.setPosition( screenW/2 - 300, screenH/2-100);
+        if(showNowPlayingTrack && organWorks.isPlaying) {
+            std::string nowPlaying = organWorks.getCurrentlyPlayingPieceName();
+            int trackOffset = organWorks.getCurrentlyPlayingPieceOffsetSeconds();
+            int trackDuration = organWorks.getCurrentlyPlayingPieceDurationSeconds();
 
-        trackDetailsRect.setPosition(screenW/2 - 350, screenH/2 - 150);
-        trackDetailsRect.setSize(sf::Vector2f(700, 300));
-        window.draw(trackDetailsRect);
+            std::string trackText = "Music starting soon...";
 
-        window.draw(trackDetailsText);*/
+            if(nowPlaying.size() > 0) {
+                trackText = nowPlaying;
+                int minutesOffset = trackOffset / 60;
+                int secondsOffset = trackOffset - minutesOffset * 60;    
+                std::string offset = "0" + std::to_string(minutesOffset) + ":";
+                if(secondsOffset < 10) {
+                    offset += "0";
+                }
+                offset += std::to_string(secondsOffset);
+
+                int minutesDuration = trackDuration / 60;
+                int secondsDuration = trackDuration - minutesDuration * 60;
+                std::string duration = "0" + std::to_string(minutesDuration) + ":";
+                if(secondsDuration < 10) {
+                    duration += "0";
+                }
+                duration += std::to_string(secondsDuration);
+
+                trackText += "\n" + offset + " / " + duration;
+            }
+            /*if(!organWorks.isPlaying && organWorks.playListIndex > 0) {
+                trackText = "Thanks for\nlistening!";
+            }*/
+
+            trackDetailsText.setString(trackText);
+            trackDetailsText.setPosition( screenW/2 - 300, screenH/2-100);
+
+            trackDetailsRect.setPosition(screenW/2 - 350, screenH/2 - 150);
+            trackDetailsRect.setSize(sf::Vector2f(700, 300));
+            window.draw(trackDetailsRect);
+
+            window.draw(trackDetailsText);
+        }
+
+
+
         
         //float t14 = timer.tock();
         //tickTock[14] = max(t14, tickTock[14]);

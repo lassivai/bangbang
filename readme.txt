@@ -13,6 +13,12 @@ R, T, Y, U, I, O	Changes terrain brush type (experiment if you want to, for debu
 Mouse drag		Paints terrain (for debugging)
 
 
+---- Command line arguments ----
+
+The following command sets a different display mode than the default (number = 0). You'll see available display modes when checking the console that has run the program. (If you haven't actually run the program from command line, the console must be checked during the time the program is on. Alt+Tab etc.)
+-display_mode [number]
+
+
 ---- CHARACTERS ----
 
 Full HP: 100
