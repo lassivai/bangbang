@@ -503,6 +503,21 @@ struct MusicAlbum {
         }
     }
 
+    void togglePlayPause() {
+        if(isPlaying) {
+            if(activePieceOfMusic != nullptr) {
+                activePieceOfMusic->pause();
+            }
+            isPlaying = false;
+        }
+        else {
+            if(activePieceOfMusic != nullptr) {
+                activePieceOfMusic->play();
+                isPlaying = true;
+            }
+        }
+    }
+
     void update() {
         if(isPlaying) {
             if(activePieceOfMusic == nullptr) {
@@ -21763,6 +21778,11 @@ int main(int argc, char **argv) {
             if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::N) {
                 float v = 1.0 - masterVolume;
                 soundWrapper.setMasterVolume(v);
+            }
+            if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::B) {
+                if(!introActive) {
+                    organWorks.togglePlayPause();
+                }
             }
 
             if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
