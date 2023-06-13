@@ -21020,7 +21020,7 @@ int main(int argc, char **argv) {
         printf("Failed to load font 'data/fonts/Starmap/00TT.TTF'\n");
     }*/
 
-    bool showNowPlayingTrack = true;
+    bool showNowPlayingTrack = false;
 
 
     sf::Text fpsText;
