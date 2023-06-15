@@ -1,7 +1,7 @@
 # Bang Bang
 
 You can download Windows binaries of Bang Bang from 
-<a href="https://drive.google.com/file/d/1Ps2T27JUc8s_at3MrlU7Eg0GnVLIzRHn/view?usp=sharing">here</a>.<br />
+<a href="https://drive.google.com/file/d/156a0ZseVehbcP_GwQK8mlbVhbX8T4BPm/view?usp=sharing">here</a>.<br />
 
 The soundtrack of the game can be listened in Youtube (<a href="https://www.youtube.com/watch?v=855o5PHB9P0">lower resolution</a> or <a href="https://www.youtube.com/watch?v=1jS_MG9lqrw">higher resolution</a>) or <a href="https://soundcloud.com/lassi-palmujoki/sets/bang-bang-original-soundtrack">SoundCloud</a>.<br />
 
