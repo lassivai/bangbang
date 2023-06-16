@@ -7907,6 +7907,254 @@ sf::SoundBuffer Heart::HeartProjectile::explosionSoundBuffer;
 
 
 
+struct AttractorBolt : public Item {
+
+    struct AttractorBoltFireProjectile : public Projectile {
+
+        sf::Color color1;
+        sf::Color color2;
+        sf::Color color3;
+
+        float time = 0;
+        float duration1 = 3;
+        float duration2 = 3;
+
+        float risingAcceleration = 100;
+
+        Projectile *attractedProjectile = nullptr;
+
+
+        bool canBeRemovedThroughTheParent = false;
+
+
+        void update(Map& map, float dt);/* {
+            if(canBeRemovedThroughTheParent) {
+                return;
+            }
+
+            if(gravityHasAnEffect) {
+                vy += gravity * dt;
+            }
+
+            float dx = 0, dy = 0, d = 1.0;
+
+            if(attractedProjectile) {
+                dx = attractedProjectile->x - x;
+                dy = attractedProjectile->y - y;
+                d = max(1.0, sqrt(dx*dx + dy*dy));
+            }
+
+            dx = dx / d;
+            dy = dy / d;
+
+            float g = 30.0;
+
+            float ti = time / (duration1+duration2);
+            ti = ti*ti*ti;
+            float t = 1.0 - ti;
+
+            vx += t * g * dx;
+            vy += t * g * dy;
+
+            vy -= ti * dt * risingAcceleration;
+            vx = vx * (1.0 - 0.5*ti);
+            vy = vy * (1.0 - 0.5*ti);
+
+
+            x += vx * dt;
+            y += vy * dt;
+
+
+            if(attractedProjectile && time < duration1) {
+                float tx = map.mapX(x, screenW);
+                float ty = map.mapY(y, screenH);
+                if(map.isTileWithin(tx, ty) && map.tiles[tx + ty*map.w].type != Map::Tile::None) {
+                    if(!map.tiles[tx + ty*map.w].burning) {
+                        map.tiles[tx + ty*map.w].flammable = true;
+                        map.tiles[tx + ty*map.w].burning = true;
+                        map.tiles[tx + ty*map.w].health = 0.1;
+                        //canBeRemovedThroughTheParent = true;
+                    }
+                }
+            }
+            time += dt;
+
+            if(time >= duration1 + duration2) {
+                if(attractedProjectile) {
+                    canBeRemovedThroughTheParent = true;
+                }
+                else {
+                    canBeRemoved = true;
+                }
+                return;
+            }
+        }*/
+
+        void render(sf::RenderWindow &window, float scaleX, float scaleY) {
+        }
+
+        sf::Color getPixelColor() {
+            if(time < duration1) {
+                /*int c = randi2(0, 255);
+                color1.g = c;
+                color1.r = c;
+                color1.b = c;
+                color1.a = randi2(0, 255);*/
+                return mix(color1, color2, time/duration1);
+            }
+            else {
+                return mix(color2, color3, (time-duration1)/duration2);
+            }
+        }
+        virtual std::string getName() {
+            return "Attractor Bolt Fire Projectile";
+        }
+    };
+
+
+    struct AttractorBoltProjectile : public Projectile {
+
+        static sf::Image image;
+        static sf::Texture texture;
+        static sf::Sprite sprite;
+
+        static sf::SoundBuffer explosionSoundBuffer;
+        static sf::SoundBuffer collisionSoundBuffer;
+
+        //int maxBounces = 10;
+        //int numBounces = 0;
+
+        float time = 0;
+        float duration = 10;
+
+        std::vector<AttractorBoltFireProjectile*> childProjectiles;
+
+
+        static void prepare() {
+            if(!image.loadFromFile("data/textures/attractorBolt.png")) {
+                printf("Couldn't open file 'data/textures/attractorBolt.png'!\n");
+                return;
+            }
+            texture.loadFromImage(image);
+            sf::Vector2u size = image.getSize();
+            sprite.setTexture(texture, true);
+            sprite.setOrigin(size.x/2, size.y/2);
+
+            if(!explosionSoundBuffer.loadFromFile("data/audio/fireballExplosion.ogg")) {
+                printf("Couldn't open file 'data/audio/fireballExplosion.ogg'!\n");
+                return;
+            }
+
+            if(!collisionSoundBuffer.loadFromFile("data/audio/fireballBounce.ogg")) {
+                printf("Couldn't open file 'data/audio/fireballBounce.ogg'!\n");
+                return;
+            }
+        }
+
+        void createExplosion(Map& map, float x, float y, vector<Character*> &characters, float explosionRadius, int numExplosionProjectiles, float explosionProjectileVelocityMin, float explosionProjectileVelocityMax);
+
+
+        //void update(Map& map, float dt);
+
+        void update(Map& map, float dt) {
+            float k = round(max(1+fabs(vx) * dt, 1+fabs(vy) * dt));
+            k = min(k, 100);
+            if(k < 1) k = 1;
+            float _dt = dt/k;
+
+            bool exploded = false;
+            for(int i=0; i<k; i++) {
+                if(gravityHasAnEffect) {
+                    vy += gravity * _dt;
+                }
+                x += vx * _dt;
+                y += vy * _dt;
+
+
+                exploded = exploded || _update(map, _dt, k, exploded);
+                //_update(map, _dt);
+            }
+        }
+
+        bool _update(Map& map, float dt, int m, bool exploded = false);
+
+        void render(sf::RenderWindow &window, float scaleX, float scaleY) {
+            //sprite.setPosition(x, y);
+            //sprite.setScale(scaleX, scaleY);
+            //window.draw(sprite);
+        }
+
+        bool isRenderSprite() {
+            return true;
+        }
+
+        virtual std::string getName() {
+            return "Attractor Bolt Projectile";
+        }
+    };
+
+    int numBolts = 5;
+    //float throwingVelocityMin = 600;
+    //float throwingVelocityMax = 1000;
+    float velocity = 500;
+    //float deltaAngle = 0.1 * Pi;
+
+    AttractorBolt() {}
+    ~AttractorBolt() {}
+
+    void use(float x, float y, float vx, float vy, float angle);
+
+    string getName() {
+        return "Wind of Hell";
+    }
+
+    float manaCostPerUse() {
+        return 100.0;
+    }
+
+    /*bool noManaCostPerUse() {
+        return bombThrown;
+    }*/
+
+    float loadingTimeSeconds() {
+        return 30;
+    }
+
+    float repeatTime() {
+        return 1;
+    }
+
+};
+
+
+sf::Image AttractorBolt::AttractorBoltProjectile::image;
+sf::Texture AttractorBolt::AttractorBoltProjectile::texture;
+sf::Sprite AttractorBolt::AttractorBoltProjectile::sprite;
+
+sf::SoundBuffer AttractorBolt::AttractorBoltProjectile::explosionSoundBuffer;
+sf::SoundBuffer AttractorBolt::AttractorBoltProjectile::collisionSoundBuffer;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -11627,6 +11875,10 @@ struct Character {
         Heart *heart = new Heart();
         heart->itemUserCharacter = this;
         items.push_back(heart);
+
+        AttractorBolt *attractorBolt = new AttractorBolt();
+        attractorBolt->itemUserCharacter = this;
+        items.push_back(attractorBolt);
 
         for(int i=0; i<itemsSecondary.size(); i++) {
             delete itemsSecondary[i];
@@ -20463,6 +20715,563 @@ void Heart::use(float x, float y, float vx, float vy, float angle) {
 
 
 
+
+
+
+void AttractorBolt::use(float x, float y, float vx, float vy, float angle) {
+        float m = 0;
+        if(itemUserCharacter) {
+            m = max(itemUserCharacter->w*itemUserCharacter->scaleX, itemUserCharacter->h*itemUserCharacter->scaleY) * 0.5;
+        }
+        else if(itemUserVehicle) {
+            m = max(itemUserVehicle->w*itemUserVehicle->scaleX, itemUserVehicle->h*itemUserVehicle->scaleY) * 0.5;
+        }
+
+        AttractorBoltProjectile *attractorBoltProjectile = new AttractorBoltProjectile();
+        attractorBoltProjectile->x = x + m * cos(angle);
+        attractorBoltProjectile->y = y + m * sin(angle);;
+        //float v = randf2(throwingVelocityMin, throwingVelocityMax);
+        //float a = angle + randf2(-deltaAngle, deltaAngle);
+        attractorBoltProjectile->vx = velocity * cos(angle);
+        attractorBoltProjectile->vy = velocity * sin(angle);
+        attractorBoltProjectile->gravityHasAnEffect = false;
+
+        attractorBoltProjectile->projectileUserCharacter = itemUserCharacter;
+        attractorBoltProjectile->projectileUserVehicle = itemUserVehicle;
+        projectiles.push_back(attractorBoltProjectile);
+
+
+        int numClusters = 15;
+        int numProjectilesPerCluster = 400;
+
+        //attractorBoltProjectile->childProjectiles.resize(numClusters*numProjectilesPerCluster);
+        //int childCounter = 0;
+
+
+        for(int n=0; n<numClusters; n++) {
+            float d = randf2(100, 150);
+            float a1 = randf2(0, 2.0*Pi);
+            float v = randf2(20, 100);
+            float a2 = randf2(0, 2.0*Pi);
+
+
+
+            for(int i=0; i<numProjectilesPerCluster; i++) {
+                AttractorBoltFireProjectile *p = new AttractorBoltFireProjectile();
+                p->x = x + d * cos(a1) * randf2(0.7, 1.3);
+                p->y = y + d * sin(a1) * randf2(0.7, 1.3);
+
+                p->vx = 0.5*vx + v * cos(a2) * randf2(0.7, 1.3);
+                p->vy = 0.5*vy + v * sin(a2) * randf2(0.7, 1.3);
+
+                
+                float alpha1 = randf2(10, 255);
+                float r1 = randf2(0, 255);
+                float b1 = randf2(0, 0);
+                float g1 = randf2(0, 0);
+                /*float alpha1 = randf2(150, 255);
+                float b1 = randf2(255, 255);
+                float g1 = randf2(100, 200);
+                float r1 = randf2(100, 200);*/
+                /*float alpha1 = randf2(150, 255);
+                float b1 = randf2(200, 255);
+                float g1 = randf2(100, 150);
+                float r1 = randf2(100, 150);*/
+                /*float alpha1 = randf2(150, 255);
+                float b1 = randf2(200, 255);
+                float g1 = randf2(200, b1);
+                float r1 = randf2(200, b1);*/
+                //p->color1 = sf::Color(r1, g1, b1, alpha1);
+                p->color1 = sf::Color(r1, r1, r1, alpha1);
+
+                /*float alpha2 = randf2(150, 255);
+                float b2 = randf2(100, 180);
+                float g2 = randf2(0, 50);
+                float r2 = randf2(0, 50);
+                p->color2 = sf::Color(r2, g2, b2, alpha2);*/
+
+                float c = randf2(50, 150);
+                float alpha2 = randf2(100, 150);
+                p->color2 = sf::Color(c, c, c, alpha2);
+
+
+                float c2 = randf2(0, 50);
+                float alpha3 = randf2(0, 50);
+                p->color3 = sf::Color(c2, c2, c2, alpha3);
+
+                p->duration1 = randf2(10, 12);
+                p->duration2 = randf2(2, 4);
+                //p->duration1 = randf2(0.1, 0.3);
+                //p->duration2 = randf2(0.7, 1.4);
+                
+                p->gravityHasAnEffect = false;
+                p->risingAcceleration = randf2(50, 1500);
+
+                p->attractedProjectile = attractorBoltProjectile;
+                //attractorBoltProjectile->childProjectiles[childCounter] = p;
+                attractorBoltProjectile->childProjectiles.push_back(p);
+                //childCounter++;
+                p->projectileUserCharacter = itemUserCharacter;
+                p->projectileUserVehicle = itemUserVehicle;
+
+                projectiles.push_back(p);
+            }
+        }
+    }
+
+
+
+void AttractorBolt::AttractorBoltProjectile::createExplosion(Map& map, float x, float y, vector<Character*> &characters, /*ExplosionProjectile::Direction dir,*/ float explosionRadius, int numExplosionProjectiles, float explosionProjectileVelocityMin, float explosionProjectileVelocityMax) {
+
+    //soundWrapper.playSoundBuffer(explosionSoundBuffer);
+/*
+    for(int i=0; i<map.characters.size(); i++) {
+        float dx = map.characters[i]->x - x;
+        float dy = map.characters[i]->y - y;
+
+        float dist = sqrt(dx*dx + dy*dy);
+
+        if(dist <= explosionRadius) {
+            map.characters[i]->takeDamage(15, 1, 1, 0, 0);
+        }
+    }
+    for(int i=0; i<vehicles.size(); i++) {
+        if(vehicles[i]->checkCirclePixelCollision(x, y, explosionRadius)) {
+            vehicles[i]->takeDamage(15);
+        }
+    }
+
+    float rr = explosionRadius * explosionRadius;
+
+    vector<Map::Tile> explodedTiles;
+
+    for(int i=-explosionRadius; i<explosionRadius; i++) {
+        for(int j=-explosionRadius; j<explosionRadius; j++) {
+            float trr = i*i + j*j;
+            if(trr < rr) {
+                float tx = map.mapX(x+i, screenW);
+                float ty = map.mapY(y+j, screenH);
+                if(map.isTileWithin(tx, ty) && map.tiles[tx + ty*map.w].type != Map::Tile::None) {
+                    if(map.tiles[tx + ty*map.w].flammable) {
+                        map.tiles[tx + ty*map.w].burning = true;
+                    }
+                    explodedTiles.push_back(map.tiles[tx + ty*map.w]);
+                    map.tiles[tx + ty*map.w] = map.emptyTile;
+                }
+            }
+        }
+    }
+
+    for(int i=0; i<explodedTiles.size(); i++) {
+        ExplosionProjectile *explosionProjectile = new ExplosionProjectile();
+        float angle = randf(0, 2.0*Pi);
+        float v = randf(explosionProjectileVelocityMin, explosionProjectileVelocityMax);
+        explosionProjectile->vx = v * cos(angle);
+        explosionProjectile->vy = v * sin(angle);
+        float r = randf(0, explosionRadius);
+        explosionProjectile->x = x + r * cos(angle);
+        explosionProjectile->y = y + r * sin(angle);
+        //explosionProjectile->x = x + 1 * 1.0/60 * cos(angle);
+        //explosionProjectile->y = y + 1 * 1.0/60 * sin(angle);
+        explosionProjectile->gravityHasAnEffect = true;
+        explosionProjectile->type = ExplosionProjectile::Type::FlyingTile;
+        explosionProjectile->flyingTile.tile = explodedTiles[i];
+        if(explosionProjectile->flyingTile.tile.type == Map::Tile::Type::Ground) {
+            explosionProjectile->flyingTile.tile.type = Map::Tile::Type::Dirt;
+        }
+        //explosionProjectile->flyingTile.tile.type = Map::Tile::Type::Dirt;
+        //explosionProjectile->flyingTile.tile.color = sf::Color(255, 255, 255, 255);
+        //explosionProjectile->direction = dir;
+        //if(explosionProjectile->vy > 0) {
+        //    explosionProjectile->direction = ExplosionProjectile::Direction::Up;
+        //}
+        //explosionProjectile->characters = characters;
+        //explosionProjectile->projectileUserCharacter = itemUserCharacter;
+        projectiles.push_back(explosionProjectile);
+    }*/
+//numExplosionProjectiles = 0;
+    /*for(int i=0; i<numExplosionProjectiles; i++) {
+        ExplosionProjectile *explosionProjectile = new ExplosionProjectile();
+        float angle = randf(0, 2.0*Pi);
+        float v = randf(explosionProjectileVelocityMin, explosionProjectileVelocityMax);
+        explosionProjectile->vx = v * cos(angle);
+        explosionProjectile->vy = v * sin(angle);
+        float angle2 = randf(0, 2.0*Pi);
+        float ra = randf(0, explosionRadius);
+        explosionProjectile->x = x + ra * cos(angle2);
+        explosionProjectile->y = y + ra * sin(angle2);
+        explosionProjectile->gravityHasAnEffect = false;
+        explosionProjectile->type = ExplosionProjectile::Type::Basic;
+        //float r = randi(50, 255);
+        //float g = min(randi(0, 255), r);
+        int r = randi(100, 255);
+        int g = (int)mapf(ra, 0, explosionRadius, 0, randi(0, 255));
+        g = min(g, r);
+        int alpha = randi(50, 255);
+        explosionProjectile->color = sf::Color(r, g, 0, alpha);
+        explosionProjectile->color2 = sf::Color(0, 0, 0, 0);
+        explosionProjectile->duration = 1.5;
+        //explosionProjectile->color3 = sf::Color(0, 0, 0, 0);
+        //explosionProjectile->flyingTile.tile.type = Map::Tile::Type::Dirt;
+        //explosionProjectile->flyingTile.tile.color = sf::Color(255, 255, 255, 255);
+        //explosionProjectile->direction = dir;
+        //explosionProjectile->characters = characters;
+        //explosionProjectile->projectileUserCharacter = itemUserCharacter;
+        projectiles.push_back(explosionProjectile);
+    }*/
+
+    createExplosion2(x, y, explosionRadius, numExplosionProjectiles, explosionProjectileVelocityMin, explosionProjectileVelocityMax);
+}
+
+
+
+
+
+
+
+
+bool AttractorBolt::AttractorBoltProjectile::_update(Map& map, float dt, int m, bool exploded) {
+
+    if(exploded) return exploded;
+
+
+
+    /*checkInitialSelfCollision();
+
+    for(int i=0; i<map.characters.size(); i++) {
+        if(map.characters[i] == projectileUserCharacter && initialSelfCollision) continue;
+        if(map.characters[i]->intersects(x, y)) {
+            createExplosion(map, x, y, characters, 150, 2000, 0, 200);
+            exploded = true;
+            canBeRemoved = true;
+            return true;
+        }
+    }
+
+    for(int i=0; i<vehicles.size(); i++) {
+        if(vehicles[i] == projectileUserVehicle && initialSelfCollision) {
+            continue;
+        }
+        if(vehicles[i]->checkPixelPixelCollision(x, y)) {
+            createExplosion(map, x, y, characters, 150, 2000, 0, 200);
+            exploded = true;
+            canBeRemoved = true;
+            return true;
+        }
+    }*/
+
+
+    float rx = 0, ry = 0;
+
+    float d = sqrt(vx*vx + vy*vy);
+    if(d == 0) d = 1;
+    bool collided = map.getCollisionReflection(x, y, vx/d, vy/d, rx, ry);
+
+    if(collided && rx < 1000 && ry < 1000) {    // TODO fix that hack
+
+        //soundWrapper.playSoundBuffer(collisionSoundBuffer, false, 50);
+        x += rx;
+        y += ry;
+        vx = rx*d;
+        vy = ry*d;
+        //vx = rx*d*0.9;
+        //vy = ry*d*0.9;
+
+        //gravityHasAnEffect = false;
+        float d = sqrt(vx*vx + vy*vy);
+        if(d < 1) {
+            vx = 0;
+            vy = 0;
+        }
+        /*numBounces++;
+        if(numBounces >= maxBounces) {
+            //createExplosion(map, x, y, characters, 75, 1000, 0, 200);
+
+            for(int i=0; i<childProjectiles.size(); i++) {
+                childProjectiles[i]->attractedProjectile = nullptr;
+            }
+
+            exploded = true;
+            canBeRemoved = true;
+            return true;
+        }*/
+    }
+    else {
+        //gravityHasAnEffect = true;
+    }
+
+    time += dt;
+    if(time >= duration) {
+        //createExplosion(map, x, y, characters, 75, 1000, 0, 200);
+
+        for(int i=0; i<childProjectiles.size(); i++) {
+            childProjectiles[i]->attractedProjectile = nullptr;
+        }
+
+        exploded = true;
+        canBeRemoved = true;
+        return true;
+    }
+
+
+    for(int i=childProjectiles.size()-1; i>=0; i--) {
+        if(childProjectiles[i]->canBeRemovedThroughTheParent) {
+            childProjectiles[i]->canBeRemoved = true;
+            childProjectiles.erase(childProjectiles.begin()+i);
+        }
+    }
+
+
+    //createSmoke(x, y, map.characters, 1, 20, 400);
+    //createFlame(x, y, map.characters, 1, 20, 400, 0);
+
+
+
+
+
+    //for(int i=0; i<1; i++) {
+    /*if(randf2(0, 1) < 0.1) {
+        AttractorBoltFireProjectile *p = new AttractorBoltFireProjectile();
+        float d = randf2(50, 100);
+        float a1 = randi2(1, 6) * randf2(0, 2.0*Pi/6.0);
+        p->x = x + d * cos(a1);
+        p->y = y + d * sin(a1);
+
+        float v = randf2(10, 200);
+        float a2 = randf2(0, 2.0*Pi);
+        p->vx = 0.5*vx + v * cos(a2);
+        p->vy = 0.5*vy + v * sin(a2);
+        //p->vx = 0;
+        //p->vy = 0;
+
+
+        float alpha1 = randf2(150, 255);
+        float b1 = randf2(150, 255);
+        float g1 = randf2(50, 150);
+        float r1 = randf2(50, 150);
+        p->color1 = sf::Color(r1, g1, b1, alpha1);
+
+        float c = randf2(50, 150);
+        float alpha2 = randf2(100, 150);
+        p->color2 = sf::Color(c, c, c, alpha2);
+
+        float c2 = randf2(0, 50);
+        float alpha3 = randf2(0, 50);
+        p->color3 = sf::Color(c2, c2, c2, alpha3);
+
+        p->duration1 = randf2(5, 5);
+        p->duration2 = randf2(0.7, 1.4);
+        //p->duration1 = randf2(0.1, 0.3);
+        //p->duration2 = randf2(0.7, 1.4);
+        
+        p->gravityHasAnEffect = false;
+        p->risingAcceleration = randf2(50, 1500);
+
+        p->attractedProjectile = this;
+
+        projectiles.push_back(p);
+    }*/
+
+
+
+
+
+
+    //if(randf2(0, 1) < 0.5) {
+    /*if(true) {
+        float d = randf2(5, 10);
+        float a1 = randf2(0, 2.0*Pi);
+        float v = randf2(150, 200);
+        float a2 = randf2(0, 2.0*Pi);
+
+
+
+        for(int i=0; i<1; i++) {
+            AttractorBoltFireProjectile *p = new AttractorBoltFireProjectile();
+            p->x = x + d * cos(a1) * randf2(0.9, 1.1);
+            p->y = y + d * sin(a1) * randf2(0.9, 1.1);
+
+            p->vx = 0.5*vx + v * cos(a2) * randf2(0.9, 1.1);
+            p->vy = 0.5*vy + v * sin(a2) * randf2(0.9, 1.1);
+
+
+            float alpha1 = randf2(100, 255);
+            float b1 = randf2(255, 255);
+            float g1 = randf2(255, 255);
+            float r1 = randf2(255, 255);
+
+            p->color1 = sf::Color(r1, g1, b1, alpha1);
+
+            float c = randf2(50, 150);
+            float alpha2 = randf2(100, 150);
+            p->color2 = sf::Color(c, c, c, alpha2);
+
+
+            float c2 = randf2(0, 50);
+            float alpha3 = randf2(0, 50);
+            p->color3 = sf::Color(c2, c2, c2, alpha3);
+
+            p->duration1 = randf2(0.5, 1.5);
+            p->duration2 = randf2(0.7, 1.4);
+            //p->duration1 = randf2(0.1, 0.3);
+            //p->duration2 = randf2(0.7, 1.4);
+            
+            p->gravityHasAnEffect = false;
+            p->risingAcceleration = randf2(50, 1500);
+
+            p->attractedProjectile = this;
+            this->childProjectiles.push_back(p);
+
+            p->projectileUserCharacter = projectileUserCharacter;
+            p->projectileUserVehicle = projectileUserVehicle;
+
+
+            projectiles.push_back(p);
+        }
+    }*/
+
+
+    return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+void AttractorBolt::AttractorBoltFireProjectile::update(Map& map, float dt) {
+    if(canBeRemovedThroughTheParent) {
+        return;
+    }
+
+
+    //checkInitialSelfCollision();
+
+    for(int i=0; i<map.characters.size(); i++) {
+        //if(map.characters[i] == projectileUserCharacter && initialSelfCollision) continue;
+        if(map.characters[i] == projectileUserCharacter) continue;
+
+        if(map.characters[i]->intersects(x, y)) {
+            map.characters[i]->takeDamage(0.1, 1, 1, 0, 0);
+
+            //createExplosion(map, x, y, characters, 150, 2000, 0, 200);
+            //exploded = true;
+            //canBeRemoved = true;
+            //return true;
+        }
+    }
+
+    for(int i=0; i<vehicles.size(); i++) {
+        //if(vehicles[i] == projectileUserVehicle && initialSelfCollision) {
+        if(vehicles[i] == projectileUserVehicle) {
+            continue;
+        }
+        if(vehicles[i]->checkPixelPixelCollision(x, y)) {
+            vehicles[i]->takeDamage(0.1);
+
+            //createExplosion(map, x, y, characters, 150, 2000, 0, 200);
+            //exploded = true;
+            //canBeRemoved = true;
+            //return true;
+        }
+    }
+
+
+
+
+
+    if(gravityHasAnEffect) {
+        vy += gravity * dt;
+    }
+
+    float dx = 0, dy = 0, d = 1.0;
+
+    if(attractedProjectile) {
+        dx = attractedProjectile->x - x;
+        dy = attractedProjectile->y - y;
+        d = max(1.0, sqrt(dx*dx + dy*dy));
+    }
+
+    dx = dx / d;
+    dy = dy / d;
+
+    float g = 40.0;
+
+    float ti = time / (duration1+duration2);
+    ti = ti*ti*ti*ti*ti;
+    float t = 1.0 - ti;
+
+    vx += t * g * dx;
+    vy += t * g * dy;
+
+    vy -= ti * dt * risingAcceleration;
+    vx = vx * (1.0 - 0.5*ti);
+    vy = vy * (1.0 - 0.5*ti);
+
+
+    x += vx * dt;
+    y += vy * dt;
+
+
+    if(attractedProjectile && time < duration1) {
+        float tx = map.mapX(x, screenW);
+        float ty = map.mapY(y, screenH);
+        if(map.isTileWithin(tx, ty) && map.tiles[tx + ty*map.w].type != Map::Tile::None) {
+            int ind = tx + ty*map.w;
+            if(!map.tiles[ind].burning && map.tiles[ind].health != 0.1) {
+                map.tiles[ind].flammable = true;
+                map.tiles[ind].burning = true;
+                map.tiles[ind].health = 0.1;
+                map.tiles[ind].color.g /= 2;
+                map.tiles[ind].color.b /= 2;
+                //canBeRemovedThroughTheParent = true;
+            }
+        }
+    }
+    time += dt;
+
+    if(time >= duration1 + duration2) {
+        if(attractedProjectile) {
+            canBeRemovedThroughTheParent = true;
+        }
+        else {
+            canBeRemoved = true;
+        }
+        return;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void ExplosionProjectile::update(Map& map, float dt) {
     if(gravityHasAnEffect) {
         vy += gravity * dt;
@@ -20894,7 +21703,7 @@ void prepareProjectiles() {
     ClusterMortar::ClusterProjectile::prepare();
     FireBall::FireBallProjectile::prepare();
     Heart::HeartProjectile::prepare();
-
+    AttractorBolt::AttractorBoltProjectile::prepare();
 }
 
 void updateProjectiles(Map &map, float dt) {
