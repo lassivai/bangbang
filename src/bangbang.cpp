@@ -87,6 +87,8 @@ DEBUG
 #include <SFML/System/Vector2.hpp>
 
 #include "noise.h"
+#include "gui.h"
+
 
 //#include <valgrind/callgrind.h>
 
@@ -7927,79 +7929,12 @@ struct AttractorBolt : public Item {
         bool canBeRemovedThroughTheParent = false;
 
 
-        void update(Map& map, float dt);/* {
-            if(canBeRemovedThroughTheParent) {
-                return;
-            }
+        void update(Map& map, float dt);
 
-            if(gravityHasAnEffect) {
-                vy += gravity * dt;
-            }
-
-            float dx = 0, dy = 0, d = 1.0;
-
-            if(attractedProjectile) {
-                dx = attractedProjectile->x - x;
-                dy = attractedProjectile->y - y;
-                d = max(1.0, sqrt(dx*dx + dy*dy));
-            }
-
-            dx = dx / d;
-            dy = dy / d;
-
-            float g = 30.0;
-
-            float ti = time / (duration1+duration2);
-            ti = ti*ti*ti;
-            float t = 1.0 - ti;
-
-            vx += t * g * dx;
-            vy += t * g * dy;
-
-            vy -= ti * dt * risingAcceleration;
-            vx = vx * (1.0 - 0.5*ti);
-            vy = vy * (1.0 - 0.5*ti);
-
-
-            x += vx * dt;
-            y += vy * dt;
-
-
-            if(attractedProjectile && time < duration1) {
-                float tx = map.mapX(x, screenW);
-                float ty = map.mapY(y, screenH);
-                if(map.isTileWithin(tx, ty) && map.tiles[tx + ty*map.w].type != Map::Tile::None) {
-                    if(!map.tiles[tx + ty*map.w].burning) {
-                        map.tiles[tx + ty*map.w].flammable = true;
-                        map.tiles[tx + ty*map.w].burning = true;
-                        map.tiles[tx + ty*map.w].health = 0.1;
-                        //canBeRemovedThroughTheParent = true;
-                    }
-                }
-            }
-            time += dt;
-
-            if(time >= duration1 + duration2) {
-                if(attractedProjectile) {
-                    canBeRemovedThroughTheParent = true;
-                }
-                else {
-                    canBeRemoved = true;
-                }
-                return;
-            }
-        }*/
-
-        void render(sf::RenderWindow &window, float scaleX, float scaleY) {
-        }
+        void render(sf::RenderWindow &window, float scaleX, float scaleY) {}
 
         sf::Color getPixelColor() {
             if(time < duration1) {
-                /*int c = randi2(0, 255);
-                color1.g = c;
-                color1.r = c;
-                color1.b = c;
-                color1.a = randi2(0, 255);*/
                 return mix(color1, color2, time/duration1);
             }
             else {
@@ -8025,7 +7960,7 @@ struct AttractorBolt : public Item {
         //int numBounces = 0;
 
         float time = 0;
-        float duration = 10;
+        float duration = 16;
 
         std::vector<AttractorBoltFireProjectile*> childProjectiles;
 
@@ -11232,7 +11167,7 @@ struct Character {
                         }
                     }
                 }
-                else if(rn < 1.0/7.0) {
+                else if(rn < 1.0/8.0) {
                     for(int k=0; k<thisCharacter->items.size(); k++) {
                         if(dynamic_cast<LightningStrike*>(thisCharacter->items[k])) {
                             thisCharacter->activeItem = k;
@@ -11240,7 +11175,7 @@ struct Character {
                         }
                     }
                 }
-                else if(rn < 2.0/7.0) {
+                else if(rn < 2.0/8.0) {
                     for(int k=0; k<thisCharacter->items.size(); k++) {
                         if(dynamic_cast<Blaster*>(thisCharacter->items[k])) {
                             thisCharacter->activeItem = k;
@@ -11248,7 +11183,7 @@ struct Character {
                         }
                     }
                 }
-                else if(rn < 3.0/7.0) {
+                else if(rn < 3.0/8.0) {
                     for(int k=0; k<thisCharacter->items.size(); k++) {
                         if(dynamic_cast<MissileLauncher*>(thisCharacter->items[k])) {
                             thisCharacter->activeItem = k;
@@ -11256,7 +11191,7 @@ struct Character {
                         }
                     }
                 }
-                else if(rn < 4.0/7.0) {
+                else if(rn < 4.0/8.0) {
                     for(int k=0; k<thisCharacter->items.size(); k++) {
                         if(dynamic_cast<ReflectorBeam*>(thisCharacter->items[k])) {
                             thisCharacter->activeItem = k;
@@ -11264,7 +11199,7 @@ struct Character {
                         }
                     }
                 }
-                else if(rn < 5.0/7.0) {
+                else if(rn < 5.0/8.0) {
                     for(int k=0; k<thisCharacter->items.size(); k++) {
                         if(dynamic_cast<Rifle*>(thisCharacter->items[k])) {
                             thisCharacter->activeItem = k;
@@ -11273,7 +11208,7 @@ struct Character {
                     }
 
                 }
-                else if(rn < 6.0/7.0) {
+                else if(rn < 6.0/8.0) {
                     for(int k=0; k<thisCharacter->items.size(); k++) {
                         if(dynamic_cast<Bolter*>(thisCharacter->items[k])) {
                             thisCharacter->activeItem = k;
@@ -11281,9 +11216,17 @@ struct Character {
                         }
                     }
                 }
-                else {
+                else if(rn < 7.0/8.0) {
                     for(int k=0; k<thisCharacter->items.size(); k++) {
                         if(dynamic_cast<Railgun*>(thisCharacter->items[k])) {
+                            thisCharacter->activeItem = k;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    for(int k=0; k<thisCharacter->items.size(); k++) {
+                        if(dynamic_cast<AttractorBolt*>(thisCharacter->items[k])) {
                             thisCharacter->activeItem = k;
                             break;
                         }
@@ -11879,6 +11822,10 @@ struct Character {
         AttractorBolt *attractorBolt = new AttractorBolt();
         attractorBolt->itemUserCharacter = this;
         items.push_back(attractorBolt);
+
+
+
+
 
         for(int i=0; i<itemsSecondary.size(); i++) {
             delete itemsSecondary[i];
@@ -20799,8 +20746,8 @@ void AttractorBolt::use(float x, float y, float vx, float vy, float angle) {
                 float alpha3 = randf2(0, 50);
                 p->color3 = sf::Color(c2, c2, c2, alpha3);
 
-                p->duration1 = randf2(10, 12);
-                p->duration2 = randf2(2, 4);
+                p->duration1 = randf2(14, 18);
+                p->duration2 = randf2(3, 6);
                 //p->duration1 = randf2(0.1, 0.3);
                 //p->duration2 = randf2(0.7, 1.4);
                 
@@ -21227,8 +21174,11 @@ void AttractorBolt::AttractorBoltFireProjectile::update(Map& map, float dt) {
                 map.tiles[ind].flammable = true;
                 map.tiles[ind].burning = true;
                 map.tiles[ind].health = 0.1;
-                map.tiles[ind].color.g /= 2;
-                map.tiles[ind].color.b /= 2;
+                if(map.tiles[ind].color.r > 30) {
+                    map.tiles[ind].color.r /= 2;
+                    map.tiles[ind].color.g /= 2;
+                    map.tiles[ind].color.b /= 2;
+                }
                 //canBeRemovedThroughTheParent = true;
             }
         }
@@ -21820,9 +21770,11 @@ int main(int argc, char **argv) {
     screenW = size.x;
     screenH = size.y;
 
-
-
     window.setVerticalSyncEnabled(true);
+
+
+    GuiElement::prepare();
+
 
     sf::Font font;
     if (!font.loadFromFile("data/fonts/georgia/Georgia.ttf")) {
@@ -22253,6 +22205,77 @@ int main(int argc, char **argv) {
     std::string introTextLine;
 
 
+    GuiElement *root = new GuiElement();
+
+    Panel *testPanel = new Panel();
+    testPanel->setTitle("Options");
+    testPanel->setSize(800, 800);
+    testPanel->x = screenW / 2 - testPanel->w/2;
+    testPanel->y = screenH / 2 - testPanel->h/2;
+    root->addChild(testPanel);
+    testPanel->isVisible = false;
+
+    struct AIActiveButton : public Button {
+        int playerIndex;
+        bool &aiActive;
+        bool &introActive;
+        AIActiveButton(int playerIndex, bool &aiActive, bool &introActive) : playerIndex(playerIndex), aiActive(aiActive), introActive(introActive) {}
+        virtual void onMouseClicked() {
+            if(!introActive) {
+                aiActive = !aiActive;
+                if(aiActive) {
+                    setTitle("Player " + std::to_string(playerIndex) + " controlled by computer");
+                }
+                else {
+                    setTitle("Player " + std::to_string(playerIndex) + " controlled by human");
+                }
+            }
+        }
+    };
+
+    float line = 50, lineHeight = 100;
+
+    Button *aiButton = new AIActiveButton(1, character.computerControl.isActive, introActive);
+    aiButton->setTitle("Player 1 controlled by human");
+    aiButton->setSize(600, 70);
+    aiButton->x = testPanel->w / 2 - aiButton->w/2;
+    aiButton->y = line += lineHeight;
+    testPanel->addChild(aiButton);
+
+    
+    Button *aiButton2 = new AIActiveButton(2, character2.computerControl.isActive, introActive);
+    aiButton2->setTitle("Player 2 controlled by human");
+    aiButton2->setSize(600, 70);
+    aiButton2->x = testPanel->w / 2 - aiButton2->w/2;
+    aiButton2->y = line += lineHeight;
+    testPanel->addChild(aiButton2);
+    
+
+
+    struct QuitButton : public Button {
+        sf::Window *window;
+        QuitButton(sf::RenderWindow *window) : window(window) {}
+        virtual void onMouseClicked() {
+            window->close();
+        }
+    };
+    Button *testButton = new QuitButton(&window);
+    testButton->setTitle("Quit");
+    testButton->setSize(200, 70);
+    testButton->x = testPanel->w / 2 - testButton->w/2;
+    testButton->y = line += lineHeight;
+    testPanel->addChild(testButton);
+
+
+
+    /*if(!introActive && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
+        character.computerControl.isActive = !character.computerControl.isActive;
+    }
+    if(!introActive && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F3) {
+        character2.computerControl.isActive = !character2.computerControl.isActive;
+    }*/
+
+
     while(window.isOpen()) {
         timer.update();
 
@@ -22264,7 +22287,8 @@ int main(int argc, char **argv) {
                 window.close();
             }
             if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-                window.close();
+                //window.close();
+                testPanel->isVisible = !testPanel->isVisible;
             }
             if (event.type == sf::Event::Resized) {
                 std::cout << "new width: " << event.size.width << std::endl;
@@ -22405,12 +22429,12 @@ int main(int argc, char **argv) {
             /*if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F1) {
                 map.fieldOfVision = Map::FieldOfVision((map.fieldOfVision+1) % 3);
             }*/
-            if(!introActive && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
+            /*if(!introActive && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
                 character.computerControl.isActive = !character.computerControl.isActive;
             }
             if(!introActive && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F3) {
                 character2.computerControl.isActive = !character2.computerControl.isActive;
-            }
+            }*/
 
 
 
@@ -22520,46 +22544,53 @@ int main(int argc, char **argv) {
             /*if(event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::Q) {
                 character2.stopChangeItem();
             }*/
-
+            bool guiMouseHover = false;
 
             if(event.type == sf::Event::MouseMoved) {
                 mouse.x = event.mouseMove.x;
                 mouse.y = event.mouseMove.y;
-                map.hover(mouse.x, mouse.y, screenW, screenH);
+            }
+            guiMouseHover = root->isMouseWithinTree(mouse.x, mouse.y);
 
-                //int ix = 0, iy = 0;
-                //bool hit = walkerTest->checkPixelPixelCollision(mouse.x, mouse.y, ix, iy);
-                //bool hit = walkerTest->checkCirclePixelCollision(mouse.x, mouse.y, 8);
-                /*if(hit) {
-                    printf("Hit! %d, %d\n", ix, iy);
-                }
-                else {
-                    printf("Didn't hit. %d, %d\n", ix, iy);
-                }*/
-            }
-            if(event.type == sf::Event::MouseButtonPressed) {
-                if(event.mouseButton.button == sf::Mouse::Button::Left) {
-                    mouse.leftPressed = true;
-                    map.click(true, mouse.x, mouse.y, screenW, screenH);
-                }
-                if(event.mouseButton.button == sf::Mouse::Button::Middle) {
-                    mouse.middlePressed = true;
-                }
-                if(event.mouseButton.button == sf::Mouse::Button::Right) {
-                    mouse.rightPressed = true;
-                    map.click(false, mouse.x, mouse.y, screenW, screenH);
+            if(guiMouseHover) {
+                if(event.type == sf::Event::MouseButtonReleased) {
+                    root->mouseClicked(mouse.x, mouse.y);
                 }
             }
-            if(event.type == sf::Event::MouseButtonReleased) {
-                if(event.mouseButton.button == sf::Mouse::Button::Left) {
-                    mouse.leftPressed = false;
+
+            if(!guiMouseHover) {
+
+                if(event.type == sf::Event::MouseMoved) {
+                    map.hover(mouse.x, mouse.y, screenW, screenH);
                 }
-                if(event.mouseButton.button == sf::Mouse::Button::Middle) {
-                    mouse.middlePressed = false;
+                if(event.type == sf::Event::MouseButtonPressed) {
+                    if(event.mouseButton.button == sf::Mouse::Button::Left) {
+                        mouse.leftPressed = true;
+                        map.click(true, mouse.x, mouse.y, screenW, screenH);
+                    }
+                    if(event.mouseButton.button == sf::Mouse::Button::Middle) {
+                        mouse.middlePressed = true;
+                    }
+                    if(event.mouseButton.button == sf::Mouse::Button::Right) {
+                        mouse.rightPressed = true;
+                        map.click(false, mouse.x, mouse.y, screenW, screenH);
+                    }
                 }
-                if(event.mouseButton.button == sf::Mouse::Button::Right) {
-                    mouse.rightPressed = false;
+                if(event.type == sf::Event::MouseButtonReleased) {
+                    if(event.mouseButton.button == sf::Mouse::Button::Left) {
+                        mouse.leftPressed = false;
+                    }
+                    if(event.mouseButton.button == sf::Mouse::Button::Middle) {
+                        mouse.middlePressed = false;
+                    }
+                    if(event.mouseButton.button == sf::Mouse::Button::Right) {
+                        mouse.rightPressed = false;
+                    }
                 }
+
+                        if(mouse.leftPressed || mouse.rightPressed) {
+            map.drag(mouse.leftPressed, mouse.x, mouse.y, screenW, screenH);
+        }
             }
             /*if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
                 map.restart();
@@ -22676,9 +22707,7 @@ int main(int argc, char **argv) {
 
         window.clear();
 
-        if(mouse.leftPressed || mouse.rightPressed) {
-            map.drag(mouse.leftPressed, mouse.x, mouse.y, screenW, screenH);
-        }
+
 
         //timer.tick();
         //if(timer.totalTime > 1) {
@@ -23012,7 +23041,8 @@ int main(int argc, char **argv) {
             window.draw(trackDetailsText);
         }
 
-
+        root->updateTree();
+        root->renderTree(window);
 
         
         //float t14 = timer.tock();
@@ -23053,6 +23083,8 @@ int main(int argc, char **argv) {
 
         //frameCounter++;
     }
+    
+    delete root;
 
     soundWrapper.finish();
 
